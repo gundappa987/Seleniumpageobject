@@ -1,0 +1,42 @@
+
+==============
+Function Types
+==============
+
+a) Table functions
+------------------
+
+- A function can be called in "FROM" clause.
+- But the function should return a collection itself.
+
+select * 
+from table(get_names(10));
+ 
+- Helps to join a TABLE & a Function
+select B.ename, B.sal 
+from table(ret_data(20)) A, emp B 
+where A.column_value = B.ename
+/
+
+
+b) Pipe-line functions
+----------------------
+- A pipeplined function is similar to a Table function.
+- It can return set of rows each time instead of all the rows.
+
+
+c) Deterministic Functions
+--------------------------
+- If a function returns same output for a same input.
+
+select length('oracle') from dual;
+
+
+c) Non-deterministic Functions
+------------------------------
+- If a function returns DIFFERENT output for a same input (or for a same function).
+
+select sysdate from dual;
+
+
+

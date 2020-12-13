@@ -1,0 +1,85 @@
+exp&imp: [Logical backup]
+=========================
+- exp is a command line utility that helps to back-up a DB object
+- it should be run from a command line 
+- Object level export is possible
+- Schema level export is also possible
+- It is a logical backup 
+- It requires that database should in operational mode
+- .DMP file is a binary (non-readable) file.
+
+==
+exp takes the back-up of DB objects.
+imp restores the DB objects from the back-up file.
+==
+
+=============practice below================================
+
+c:\ exp scott/tiger tables=('prod','orders')  file='c:\temp\tabs.dmp'
+
+sql> drop table prod;
+
+sql> select * from prod;
+<>
+
+c:\ imp scott/tiger tables=('prod') file='c:\temp\tabs.dmp' 
+
+sql> select * from prod;
+
+===========================================================
+
+C:\ exp help=y
+
+C:\ imp help=y
+
+
+c:\ exp scott/tiger file='c:\temp\tabs.dmp' query='select ename from emp where deptno=20' 
+
+$ exp system/manager owner=('scott') file='\home\temp\users.dmp'
+
+$ exp scott/tiger tables=('demo','dept') file='\home\temp\tabs.dmp' rows=n grants=n
+
+
+Datapump - expdp & impdp
+========================
+ - expdp is similar to exp, but it has more features.
+ - impdp is similar to imp, but it has more features.
+
+
+Datapump[expdp]			Traditional [exp]
+=================		==================
+a. Faster(multiple process)	Slower(single process)
+b. Dump File is stored in  	The dump file is stored in Client location
+   server location.
+c. From 10g onwards		Before 10g also it is available
+d. Has more features to exp.	Has less features to export.
+
+
+
+Table Exports/Imports using DataPump
+====================================
+
+sql> create or replace directory test_dir as 'c:\test';
+
+$ expdp scott/tiger@orcl tables=EMP,DEPT directory=TEST_DIR dumpfile=EMP_DEPT.dmp parallel=4
+
+$ impdp scott/tiger@orcl tables=EMP,DEPT directory=TEST_DIR dumpfile=EMP_DEPT.dmp 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

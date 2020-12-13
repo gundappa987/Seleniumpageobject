@@ -1,0 +1,33 @@
+
+-- trigger basic example ..
+
+create or replace trigger test_trig
+before delete on emp
+--for each row
+declare
+ var number;
+begin
+ dbms_output.put_line('hi..');
+end;
+/
+
+
+===========================
+delete from emp where deptno=20;
+delete from emp where deptno=0;
+rollback;
+======================
+
+** uncomment "for each row"  and re-execute the above DELETE statements to check for ROW level.
+======================================
+
+
+Eg:- 2
+======
+create or replace trigger test_trig
+after delete on emp 
+ for each row
+begin
+  raise_application_error(-20007, 'table cant  be deleted');
+end;
+/

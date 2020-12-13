@@ -1,0 +1,74 @@
+DMLTrigger Hirerachy
+====================
+
+i)  before statement level [T1]
+
+ii) before row level [T2]
+
+<<triggering statement>>
+
+iii) after row level [T3]
+
+iv)  after statement level [T4]
+
+====================================
+** If 2 two triggers are differing only in EVENT 
+(level & timing are same), then Oracle decides which one should fire first.
+
+Eg:-
+====
+
+- Trigger  T2 -> BEFORE INSERT ON EMP for each row
+- Trigger  T3 -> BEFORE INSERT ON EMP for each row
+
+ ** Here any of  T2, T3 might be fired first. (ORACLE DECIDES)
+
+=====================================
+
+ASSIGNMENT
+==========
+A) write 4 triggers to prove same hirerchy is correct?
+
+
+
+
+
+
+
+create or replace trigger t1
+before delete on emp
+--
+begin
+ dp('hi');
+end;
+/
+
+create or replace trigger t2
+after delete on emp
+--
+begin
+ dbms_output.put_line('hello');
+end;
+/
+
+create or replace trigger t3
+before delete on emp
+for each row
+begin
+ dbms_output.put_line('bye');
+end;
+/
+
+
+create or replace trigger t4
+after delete on emp
+for each row
+begin
+ dbms_output.put_line('over');
+end;
+/
+
+delete from emp where empno=7788;
+
+
+

@@ -1,0 +1,137 @@
+
+Disadvantages/Limitations of Triggers :-
+========================================
+
+(1) Error while using TCL & DDL & DCL statements 
+
+-We can't use TCL/DDL directly in the triggers. 
+-If we use TCL, trigger will be compiled but it throws run-time error.
+
+-Runtime Error : "ORA-04092: cannot COMMIT in a trigger"
+
+-We can use PRAGMA AUTONMOUS_TRANSACTION to overcome this.
+
+
+
+CREATE OR REPLACE TRIGGER TEST_TRIG
+BEFORE DELETE ON EMP
+--declare
+  --pragma autonomous_transaction;
+BEGIN
+   INSERT INTO TEMP
+	VALUES(1,'deleted..');
+
+   COMMIT;
+END;
+/
+
+
+
+DELETE FROM EMP
+/
+
+
+
+
+------------------------------------------------------------------------------
+
+
+(2) Mutating triggers  / Mutating errors in triggers
+----------------------------------------------------
+
+- It is a runtime error occurs only for row level triggers.
+
+Cause:
+======
+ If we access[SELECT/DML] the triggering table in the body of the same trigger within a ROW LEVEL TRIGGER.  (for Statement level trigger this error will  not come).
+
+Solution:
+=========
+Method (i)
+----------
+-Split the main trigger into 2 different triggers and pass a value between them using global variable.
+ 	(a) statement level trigger 	- write a one-time logic
+ 	(b) row level trigger  		- write repetitive logic
+ 
+
+Method (ii)
+-----------
+-Make use of Autonomous transaction pragma (Autonomous Triggers).
+-This method will not overcome problems in all scenarios.
+
+
+***********************************************************************************
+--Requirement is to delete a record from emp11 table which is getting udpated.
+
+
+sql> create table emp11 as select * from emp;
+
+sql> select * from emp11 ;
+
+sql>
+create or replace trigger test_trig
+before update on emp11
+for each row
+begin
+   delete from emp11 where empno = :new.empno;
+end;
+/
+
+
+SQL> update emp11 set sal=8000 where empno=7788;
+
+<<ORA-04091: table ANONYMOUS.EMP11 is mutating, trigger/function may not see it>>
+
+***********************************************************************************
+
+
+********************************solution********************************************
+
+drop trigger test_trig
+/
+
+create or replace package testpack 
+is
+	v1 number;
+end;
+/
+
+
+create or replace trigger test_trig1
+before update on emp11
+for each row
+begin
+    testpack.v1 := :new.empno;
+end;
+/
+
+create or replace trigger test_trig2
+after update on emp11
+begin
+   delete from emp11 where empno = testpack.v1; 
+end;
+/
+
+update emp11 set sal = 2000 where empno = 7788;
+
+select * from emp11;
+
+***********************************************************************************
+
+3) Cascading Triggers
+---------------------
+- Firing of one trigger will fire another and so on .....
+- It may cause dead-locks.
+- We have to write the triggers carefully to avoid the dead locks.
+- We can also DBMS_LOCK.SLEEP package to create waiting time for triggers.
+
+
+4) Peformance Issues
+---------------------
+- Writing more triggers will lead to performance issues.
+
+
+
+
+
+ 

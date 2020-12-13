@@ -1,0 +1,42 @@
+WHEN clause:
+============
+
+- Used for firing a trigger based on a condition.
+- Can be used ONLY IN ROW LEVEL TRIGGERS
+- It is efficient than giving condition in body of the triggers
+- Colon shouldn't used for OLD & NEW in WHEN clause
+
+
+=======================WITHOUT "WHEN"====================
+create or replace trigger test_trig
+before DELETE on emp
+for each row
+declare
+ ..
+..
+
+begin
+  if :OLD.deptno=20 then
+	  insert into empbkup
+		values(:OLD.empno, :OLD.ename);
+  end if;
+end;
+/
+
+========================USING "WHEN"====================
+
+create or replace trigger test_trig
+before DELETE on emp
+for each row
+when (OLD.deptno=20)    -- trigger will fire only for dept=20 {no colon for OLD}
+declare
+ ..
+..
+
+begin
+  insert into empbkup
+	values(:OLD.empno, :OLD.ename);
+end;
+/
+
+==============================================================

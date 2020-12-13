@@ -1,0 +1,347 @@
+cursor c1
+is
+	select ename, sal 
+	from emp;
+
+cursor c2
+is
+	select dname 
+	from dept;
+
+
+
+http://nimishgarg.blogspot.com/2016/02/get-results-from-refcursor-with-unknown.html
+
+
+======================================================
+		REF CURSOR [cursor variables] 
+======================================================
+
+?It is an user defined data type which can store different results sets (query) at different point of time.
+?It’s a dynamic cursor.
+?It uses Dynamic SQL.
+?Ref cursor is also called as “CURSOR VARIABLE”
+
+
+==========
+Advantages
+==========
+- It helps to store different result set at different point of time 
+  (avoids multiple static cursors)
+- It helps to return multiple records from a procedure or function.
+
+
+
+
+================================================================
+Basic Ref Cursor Example (Avoids using multiple Static Cursors) 
+================================================================
+-- Without using a ref cursor.
+
+declare
+ cursor c1
+ is
+	select dname from dept;
+
+ cursor c2
+ is
+	select ename from emp;
+
+ v1 	varchar(20);
+
+begin
+
+ for i in c1
+ loop
+	DBMS_OUTPUT.PUT_LINE(i.dname);
+ end loop;
+
+
+ 
+ for i in c2
+ loop
+	DBMS_OUTPUT.PUT_LINE(i.ename);
+ end loop;
+
+
+end;
+/
+
+==========================================================
+
+-- By using a ref cursor.
+
+declare
+
+ C1  SYS_REFCURSOR;
+
+ TYPE ref_typ IS REF CURSOR;
+ v2   ref_typ;
+ v1 	varchar(20);
+
+begin
+
+ OPEN C1
+ FOR
+	'SELECT ENAME FROM EMP';
+ LOOP
+	FETCH v2 INTO V1;
+	DBMS_OUTPUT.PUT_LINE(V1);
+	EXIT WHEN C1%NOTFOUND;
+ END LOOP;
+ CLOSE C1;
+ 
+ OPEN C1
+ FOR
+	'SELECT DNAME FROM DEPT';
+ LOOP
+	FETCH v2 INTO V1;
+	DBMS_OUTPUT.PUT_LINE(V1);
+	EXIT WHEN C1%NOTFOUND;
+ END LOOP;
+ CLOSE C1;
+
+end;
+/
+==================================================================================
+
+====================
+Types of REF CURSORS
+====================
+(a) Strong Ref Cursors (b) Weak Ref Cursors
+
+a) Strong Ref Cursor:
+?It has return type.
+?Not flexible.
+?We can store only data compatible within return type.
+?There is no in-built ref cursor.
+
+ 
+Strong Ref Cursor:
+==================
+declare
+ type typ_ref is ref cursor RETURN dept%ROWTYPE;
+
+ var  typ_ref;
+ vcr dept%rowtype;
+
+begin
+ open var for select * from dept where deptno=20;--> works
+ fetch var into vcr ;
+ close var;
+dbms_output.put_line( vcr.dname||' '||'has location '|| vcr.loc);
+end;
+/
+
+ open var for select * from emp where deptno=10;--> fails
+end;
+
+
+
+(b)Weak Ref Cursor
+?It doesn’t have a return type.
+?It is flexible than strong ref cursor
+?We can store any type of data type.
+
+?We have in-built weak ref cursor type (SYS_REFCURSOR)
+
+
+Weak Ref Cursor:
+================
+declare
+ type typ_ref is ref cursor;
+ var  typ_ref;
+
+ --var sys_refcursor;
+
+begin
+ open var for select * from emp;  --> works
+ 
+ close var;
+
+ open var for select * from dept; --> works
+ return var;
+ close var;
+end;
+/
+
+
+
+NOTE:- SYS_REFCURSOR is in-built weak ref cursor type which can store any type of data/rows.
+======
+
+
+
+===============================================================================================
+- Example: "FUNCTION" to return multiple records using a Ref Cursor
+- FUNCTION to return all the enames for given a deptno.
+
+
+    create or replace function get_name
+    (
+      pdno in number
+    )
+    return sys_refcursor
+    is
+       v1 sys_refcursor;
+    begin
+      open v1
+      for
+              'select ename,sal from emp where deptno = ' || pdno;
+      return v1;
+  end;
+  /
+
+
+SQL> select get_name(20) from dual ;
+
+
+===============================================================================================
+
+- Example: "PROCEDURE" to return multiple records using a Ref Cursor
+- SP to return all the enames, salary for given a deptno.
+
+create or replace procedure getnms
+(
+  pdno in 	number,
+  pnms out	sys_refcursor
+)
+is
+  vstr varchar(200);
+begin
+  vstr := 'select ename,sal from emp where deptno = ' ||pdno;
+  open pnms for vstr;
+end;
+/
+========unit testing===================
+
+SQL> variable t1 refcursor;
+SQL> exec get_names_1(10,:t1);
+sql> print t1;
+
+
+===============================================================================================
+
+
+================================================
+Differences between Ref Cursors & Static Cursors
+================================================
+
+========================================================================
+Ref Cursor				Explicit Cursor (Static Cursor)
+========================================================================
+
+It is like a dynamic cursor 		It is a static one 
+					(we can't store different result sets at 	
+					different point of time in explicit cursor)
+
+
+It works on Dynamic SQL Concept		It works on Static SQL Concept	
+	
+
+Ref cursor could be passed 
+as OUT parameter from SP 		Normal cursor cannot be OUT parameter
+
+
+
+Ref cursor cannot be processed 		Normal cursor can be done
+with FOR LOOP 				
+
+
+
+Ref cursor will take the query 		Normal cursors takes the query during declaration		
+during opening 
+				
+
+
+Ref cursor can also be an 		Normal cursor cannot be used as an IN
+IN parameter to SP 			parameter
+
+
+
+
+
+
+Assignments:
+============
+
+-> Write a function ("show_data") to accept a number, 
+if input number = 1 then return enames else return dnames.
+
+select show_data(1) from dual
+/
+
+select show_data(2) from dual
+/
+
+
+-> Write a SP/Function to return all enames & dnames for a given job.
+
+  create or replace procedure get_job
+(
+  pjob in 	varchar,
+  pt out	sys_refcursor
+)
+is
+  vt varchar(200);
+begin
+  vt := 'select ename,sal from emp where job= ' ||pjob;
+  open pt for vt;
+end;
+/
+
+===============================================================================================================
+
+
+=========================================================================
+-- Real time sceanrio to return all the transaction between 2 date range.
+=========================================================================
+
+create or replace procedure get_trns
+(
+pst_dt 	IN  date,
+pen_dt 	IN  date,
+pact_no IN  number,
+pdet	out sys_refcursor
+
+)
+is
+vstr varchar(2000);
+begin
+	open pdet
+	for
+		select *
+		from trns
+		where acct_no = pact_no
+		and   trns_dt between pst_dt and pen_dt;
+/*
+		
+vstr:='select * from trns where acct_no = '||pact_no||' and trns_dt between '|| pst_dt ||' and ' ||pen_dt;	
+	
+  open pdet for vstr;
+
+*/
+
+end;
+/
+
+
+============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

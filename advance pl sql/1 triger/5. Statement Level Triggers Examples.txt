@@ -1,0 +1,20 @@
+
+
+--Will not allow the deletions on EMP table if record count<10.
+create or replace trigger trig_chk_cnt
+before delete on emp
+declare
+	vcnt pls_integer := 0;
+begin
+	select	count(*)
+	into    vcnt
+	from	emp;
+	if vcnt<10 then
+		raise_application_error(-20007,'Limit Reached!!');
+	end if;
+end;
+/
+=================
+delete from emp where deptno=20;
+delete from emp where deptno=10;
+=================

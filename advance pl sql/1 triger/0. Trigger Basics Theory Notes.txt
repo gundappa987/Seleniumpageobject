@@ -1,0 +1,5 @@
+Trigger: a trigger is a pl/sql block structure which is automatically fired when an event occurs in the database
+- the event can be ddl, dml, or system events
+- a trigger code is automatically when an associated event happens in the database
+
+- trigger is pl/sql block structure which is automatically fired when an event occurs in the database

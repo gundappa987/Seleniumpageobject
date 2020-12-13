@@ -1,0 +1,62 @@
+ - how to fetch particular record in table 
+SQL>  select * from emp where rowid in (select max(rowid) from emp where rownum<=5);
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7654 MARTIN     SALESMAN        7698 28-SEP-81       1250       1400         30
+
+  -  HOW TO DISPLAY highst sal number wise s ?
+SQL>  select min(sal) from (select distinct (sal) from emp order by sal desc) where rownum<=2;
+s
+  MIN(SAL)
+----------
+      3000
+-  how to display lowest sal number wise?
+ SQL> select max(sal) from (select distinct (sal) from emp order by sal  ) where rownum<=5
+  2  /
+
+  MAX(SAL)
+----------
+      1300
+  -how to display last five record in table ?
+ select * from (select * from emp order by rowid desc) where rownum<=5;
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7934 MILLER     CLERK           7782 23-JAN-82       1300                    10
+      7902 FORD       ANALYST         7566 03-DEC-81       3000                    20
+      7900 JAMES      CLERK           7698 03-DEC-81        950                    30
+      7876 ADAMS      CLERK           7788 23-MAY-87       1100                    20
+      7844 TURNER     SALESMAN        7698 08-SEP-81       1500          0         30
+
+orSQL>  select * from emp minus
+  2  select * from emp where rownum<=(select count(*) - 5 from emp);
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7844 TURNER     SALESMAN        7698 08-SEP-81       1500          0         30
+      7876 ADAMS      CLERK           7788 23-MAY-87       1100                    20
+      7900 JAMES      CLERK           7698 03-DEC-81        950                    30
+      7902 FORD       ANALYST         7566 03-DEC-81       3000                    20
+      7934 MILLER     CLERK           7782 23-JAN-82       1300                    10
+
+   -- HOW TO DELETE LAST FIVE RECORDS ?
+SQL> delete from emp where rowid in (select ROWID from (select * from emp order by rowid desc) WHERE ROWNUM<=5);
+
+5 rows deleted.
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7369 SMITH      CLERK           7902 17-DEC-80        800                    20
+      7499 ALLEN      SALESMAN        7698 20-FEB-81       1600        300         30
+      7521 WARD       SALESMAN        7698 22-FEB-81       1250        500         30
+      7566 JONES      MANAGER         7839 02-APR-81       2975                    20
+      7654 MARTIN     SALESMAN        7698 28-SEP-81       1250       1400         30
+      7698 BLAKE      MANAGER         7839 01-MAY-81       2850                    30
+      7782 CLARK      MANAGER         7839 09-JUN-81       2450                    10
+      7788 SCOTT      ANALYST         7566 19-APR-87       3000                    20
+      7839 KING       PRESIDENT            17-NOV-81       5000                    10
+
+9 rows selected.

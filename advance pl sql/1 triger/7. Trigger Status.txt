@@ -1,0 +1,50 @@
+Trigger Status
+---------------
+
+a) ENABLED 	- active   / it will fire / default
+
+b) DISABLED	- inactive / it will not fire
+
+
+ALTER TRIGGER test_trig DISABLE
+/
+
+ALTER TRIGGER test_trig ENABLE
+/
+
+ALTER TABLE emp ENABLE ALL TRIGGERS  -- enables all the triggers at once ..
+/
+
+ALTER TABLE emp DISABLE ALL TRIGGERS -- disables all the triggers at once ..
+/
+
+
+Note:
+=====
+- table, view, synonym, SP, function, Package - can't have same name
+- Trigger , index & a table can have same name..
+
+
+============================
+Viewing trigger source code
+============================
+SQL> desc user_triggers;
+
+SQL> select trigger_name, status 
+     from user_triggers
+     where table_name='EMP';
+
+
+-- GETTING SOURCE CODE FROM DB
+
+SQL> SELECT TEXT FROM USER_SOURCE WHERE NAME='TEST_TRIG';
+
+or
+==
+
+SQL> SELECT TRIGGER_BODY FROM USER_TRIGGERS WHERE TRIGGER_NAME='TEST_TRIG';
+
+
+
+
+

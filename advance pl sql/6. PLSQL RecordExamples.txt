@@ -1,0 +1,259 @@
+PLSQL records  [RECORD TYPE VARIABLES]
+======================================
+- It is an user-defined datatype.
+- It helps to store more than 1 columns in a single variable.
+- It is similar to STRUCTURES in C language.
+- It reduces the number of variables required for a program.
+- It is not stored in the database.
+- It is used only within a PLSQL program.
+- It can't be used in SQL level (DB level).
+- Record types help to reduce variables and program will be compact and efficient.
+
+Types:
+------
+a) Pre-defined Type	- %ROWTYPE
+b) User-defined Type	- User will create as per the need (2 Steps)
+
+
+a)Pre-defined type (Using %ROWTYPE)  [BASED ON ONLY ONE TABLE]
+===================================
+declare
+
+ var emp%ROWTYPE;  -- record type .. 
+
+begin
+
+ select *
+ into   var
+ from   emp  
+ where  empno = 7788 ;
+
+ dbms_output.put_line(var.dname||var.loc);
+
+end;
+/
+
+
+b) Using Custom Type  [user-defined type used for different table)]
+=========================================
+declare
+
+  TYPE rec_typ IS RECORD 
+  (
+	ename   varchar(20),
+	dname   varchar(20)
+  );
+  vtemp rec_typ;
+
+begin
+	select a.ename, b.dname
+	into   vtemp
+	from   emp a, dept b
+	where  a.deptno = b.deptno
+	and    a.empno = 7788;
+	dbms_output.put_line(vtemp.ename||'-'||vtemp.dname);
+end;
+/
+
+Advantages [custom type]:
+=========================
+- custom type is useful to fetch columns from different tables.
+ 
+- Helps to declare required number of columns instead of all the columns.
+ 
+
+
+====================================================================
+
+--Example for Record Level DML Operations
+
+declare
+ vrec dept%rowtype;
+begin
+ vrec.deptno := 20;
+ vrec.dname  := 'res';
+ vrec.loc    := 'ban';
+
+ insert into dept
+	values vrec;
+
+
+/*
+	update dept
+		set ROW = vrec
+		where deptno = 20;
+*/
+
+
+	/*
+	update dept
+		set dname = vrec.dname, loc = vrec.loc
+		where deptno = 20;
+	*/
+
+end;
+/
+
+======================================
+
+
+a)Pre-defined type (Using %ROWTYPE)  [for fetching all columns from 2 different tables]
+===================================
+declare
+
+ VTEMP1 EMP%ROWTYPE;  -- 
+ VTEMP2 DEPT%ROWTYPE;
+
+begin
+	select a.*, b.*
+	into   vtemp1, VTEMP2
+	from   emp a, dept b
+	where  a.deptno = b.deptno
+	and    a.empno = 7788;
+	dbms_output.put_line(vtemp1.ename||'-'||vtemp2.dname);
+
+end;
+/
+
+
+
+
+
+Assignment
+==========
+
+Consider the below 2 tables:-
+
+dept
+====
+deptno	dname	loc
+10	ACCTS	NY
+20	RSERAC  
+15	SALES	BA
+
+dept1
+=====
+deptno	dname		loc
+10	IT		MY
+15	SALES		BA
+20	RESEARCH	UK
+40	OPERATIONS	BOSTON
+
+ 1)CREATE TABLE DEPT1 
+( DEPTNO NUMBER NOT NULL,
+  DNAME VARCHAR(20) NOT NULL,
+  LOC VARCHAR(10)
+)
+/
+insert into dept1 values (10, 'IT', 'NY');
+ INSERT INTO DEPT1 VALUES (20, 'RESRCH','') ;
+INSERT INTO DEPT1 VALUES (15, 'SALES', 'BA');
+2) create table dept2 
+(deptno number not null,
+ dname varchar(20), not null,
+ loc varchar(20)
+)
+/
+INSERT INTO DEPT2 VALUES (10, 'IT', 'MY');
+INSERT INTO DEPT2 VALUES (15, 'SALES', 'BA') ; 
+INSERT INTO DEPT2 VALUES (20, 'RESEARCH', 'U');
+INSERT INTO DEPT2 VALUES (40, 'OPERATIONS', 'BOSTON');
+
+
+- Write a SP To meet the below requirements
+- If all columns are same b/w dept & dept1 for a given deptno, then return 'SAME' else return 'DIFFERENT'
+- No exception should come.
+- Should use record type variable for storing the data
+
+
+CREATE TABLE DEPT1 AS SELECT * FROM DEPT;
+CREATE TABLE DEPT2 AS SELECT * FROM DEPT;
+
+
+create or replace procedure get_status
+(
+ pdno in number, pmsg out varchar
+)
+IS 
+V1 DEPT1%ROWTYPE;
+V2 DEPT2%ROWTYPE;
+BEGIN
+SELECT * INTO V1 FROM DEPT1 WHERE DEPTNO= PDNO;
+SELECT * INTO v2 FROM DEPT2 WHERE DEPTNO= PDNO;
+IF (V1. DNAME = V2. DNAME ) AND (V1. LOC = V2 .LOC) THEN
+  pmsg := 'same';
+ELSE
+  pmsg := 'DIFF';
+END IF;
+END;
+/
+SQL> SHO ERR
+Errors for PROCEDURE GET_STATUS:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+11/1     PL/SQL: Statement ignored
+11/21    PLS-00302: component 'DANME' must be declared
+SQL>
+ create or replace procedure get_status
+   (
+     pdno in number, pmsg out varchar
+    )
+    IS
+    V1 DEPT1%ROWTYPE;
+    V2 DEPT2%ROWTYPE;
+    BEGIN
+    SELECT * INTO V1 FROM DEPT1 WHERE DEPTNO= PDNO;
+   SELECT * INTO v2 FROM DEPT2 WHERE DEPTNO= PDNO;
+   IF (V1. DNAME = V2. DNAME ) AND (V1. LOC = V2 .LOC) THEN
+     pmsg := 'same';
+   ELSE
+     pmsg := 'DIFF';
+   END IF;
+   END;
+   /
+
+Procedure created.
+
+SQL> variable vt varchar2(10);
+SQL> exec get_status(10,:vt);
+
+PL/SQL procedure successfully completed.
+
+SQL> print vt
+
+VT
+--------------------------------
+same
+
+SQL> update dept1 set dname = 'x' where deptno = 10;
+
+1 row updated.
+
+SQL> exec get_status(10,:vt);
+
+PL/SQL procedure successfully completed.
+
+SQL> print vt
+
+VT
+--------------------------------
+DIFF
+
+SQL> exec get_status(20,:vt);
+
+PL/SQL procedure successfully completed.
+
+SQL> print vt
+
+VT
+--------------------------------
+same
+
+SQL>
+
+
+
+
+..
+

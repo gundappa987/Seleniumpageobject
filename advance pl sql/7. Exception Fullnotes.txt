@@ -1,0 +1,627 @@
+		
+
+
+			=================================
+			EXCEPTIONS AND EXCEPTION HANDLING
+			=================================
+
+
+
+Types of errors  :
+==================
+a. Compilation errors - occurs due to syntax  - need change in the code.
+b. Runtime     errors - occurs due to logic/data [exceptions] - may or maynot need the code change
+Exception: 
+==========
+A run-time error.
+
+
+What happens when an error occurs:
+==================================
+When an error occurs:
+	a) Stops the execution
+	b) Rolls back all the un-committed DMLs within that Program.
+	c) Control will come-out of the program
+
+Format of the error:
+====================
+a) Error Code
+b) Error Message
+
+Eg:- no
+ORA-01403: no data found
+
+
+Exception Handling
+==================
+- It is a process of handling an exception.
+- Helps to display an user-defined message instead of a Pre-defined message
+- Helps to perform some task [sending mails, logging into a error log table, or any   business logic etc.] instead of showing that    error.
+- Exception Handling can be done by using "Exception Handler"
+- When an exception is handled, the error is suppressed and it behaves as if no error has occured in it..
+- Exception handling helps to return OUT Parameter values even though error is there.
+
+
+Types of exception handlers
+===========================
+a) Pre-defined  -> provided by oracle
+b) User-defined -> defined by the user
+
+
+List of pre-defined exceptions/exception handlers
+=================================================
+a) NO_DATA_FOUND 	-01403
+b) TOO_MANY_ROWS 	-01422
+C) VALUE_ERROR   	-06502  - data type & size mismatch
+D) CURSOR_ALREADY_OPEN 	-06511
+E) INVALID_CURSOR 	-01001
+F) DUP_VAL_ON_INDEX 	-00001  - HANDLES UNIQUE CONSTRAINT VIOLATED
+G) ZERO_DIVIDE  	-01476  - HANDLES ZERO DIVIDE ERROR (INFINITY ERROR)
+h) OTHERS		- generic handler which can handle any errors.
+
+--------------------------------------------------------------------------
+Eg:-
+====
+
+-- pgm to handle a "no data found" error.
+create or replace procedure test_sp
+(
+ peno in 	number,
+ pnm  out 	varchar
+)
+is
+begin
+   select ename
+   into   pnm
+   from   emp
+   where  empno = peno;
+
+exception
+   when no_data_found then
+	dbms_output.put_line('emp doesnot exists !! ');
+	pnm := 'NF';
+end;
+/
+
+
+SQL> variable v1 varchar2(10);
+SQL> exec test_sp(7788, :v1);
+
+
+--------------------------------
+--------------------------------
+
+NOTE:
+=====
+We can have multiple exception handlers, but only one exception is handled at any given time ..
+
+
+
+-- Program to handle multiple exception handlers
+create or replace procedure test_sp
+(
+ pjob in 	varchar,
+ pnm  out 	varchar
+)
+is
+   select ename   
+   into   pnm
+   from   emp     
+   where  job = pjob;
+
+exception
+  when no_data_found then
+  	dbms_output.put_line('invalid employee!!');
+		
+  when too_many_rows then
+	dbms_output.put_line('more than 1 employee!!');	
+
+  when others then
+	dbms_output.put_line('some error..!!');	
+end;
+/
+
+====================================================================================================
+-- First check whether emp exists in E_ACTIVE table, if not present then check in E_INACTIVE table.
+
+DECLARE
+
+  VNAME E_ACTIVE.ENAME%TYPE;
+  VENO  E_ACTIVE.EMPNO%TYPE := &EMPNO;
+ 
+BEGIN
+	SELECT ENAME
+	INTO   VNAME
+	FROM   E_ACTIVE
+	WHERE  EMPNO = VENO;
+
+	dbms_output.put_line(VNAME||' IS ACTIVE');
+
+exception
+  when no_data_found then
+	begin
+		SELECT ENAME
+		INTO   VNAME
+		FROM   E_INACTIVE
+		WHERE  EMPNO = VENO;
+
+		dbms_output.put_line(VNAME||' IS INACTIVE');
+	EXCEPTION
+		WHEN NO_DATA_FOUND THEN
+			dbms_output.put_line('NOT EXISTS');
+	end;
+end;
+/
+
+ASSIGNMENT:- Re-write above program using Stored Procedure and unit test the same for all scenarios.
+------------ (Write a SP To return Ename for a given empno.. 
+		Input => 7788, Output => Active-Scott
+		Input => 7902, Output => In-active-FORD
+		Input => 9999, Output => NF
+		Don't Use DBMS_OUTPUT package..
+	     )
+====================================================================================================
+
+-- PROGRAM TO HANDLE UNIQUE CONSTRAINT VIOLATED ERROR
+
+create or replace procedure save_dept
+(
+ pdno 	in 	number,
+ pdnm 	in 	varchar,
+ ploc 	in	varchar
+)
+is
+BEGIN
+
+ INSERT INTO DEPT VALUES(pdno, pdnm, ploc);
+
+ COMMIT;
+
+EXCEPTION
+   WHEN DUP_VAL_ON_INDEX THEN
+     --DBMS_OUTPUT.PUT_LINE('deptno ALREADY EXISTS !!');
+	RAISE_APPLICATION_ERROR(-20009, 'deptno ALREADY EXISTS!!');
+END;
+/
+
+EXEC SAVE_DEPT(25, 'IT', 'BA');
+
+EXEC SAVE_DEPT(25, 'PF', 'US');  -- ERROR.
+
+
+=====================================================
+
+
+EXCEPTION SCENARIOS
+===================
+
+(a) SCENARIO 1 :
+
+"WHEN OTHERS can handle any type of exception"
+
+declare
+   vjob varchar(20) := '&job';
+   vnm  varchar(20);
+begin
+   select ename
+   into   vnm
+   from   emp
+   where  job = vjob;
+   dbms_output.put_line(vnm);
+exception
+  when OTHERS then
+    dbms_output.put_line('invalid VALUE!!');
+end;
+/
+
+
+
+note:
+=====
+OTHERS handler must be used as the last statement in the exception block..
+(otherwise it throws another compilation error).
+declare
+vjob varchar(20):='&job';
+vnm varchar(20);
+begin
+select ename into vnm from emp where job=vjob;
+exception	
+when no_data_found then
+		dbms_output.put_line('Emp not existing!');
+when others then
+		dbms_output.put_line('some error');		
+end;
+/
+
+
+
+(b) SCENARIO 2 :
+We cannot capture an exception raised in the DECLARE section directly.
+WE HAVE TO WRITE AN OUTER BLOCK TO CAPTURE IT..
+
+
+declare
+     veno number(2) := 90000;
+begin
+	dbms_output.put_line ('x');
+exception
+  when others then
+	dbms_output.put_line('some error111111111');	
+end;
+/
+
+-- The above code throws un-handled exception, we have to write an outer block.
+
+-------
+-------
+
+begin
+
+   declare
+        veno number(2) := 9000;
+   begin
+        dbms_output.put_line ('HELLO');
+   exception
+        when others then
+           dbms_output.put_line('some error111111111');
+   end;
+
+
+exception
+   when others then
+           dbms_output.put_line('some error22222');
+end;
+/
+
+NOTE:-
+Any exception raised in DECLARE section will propogate to exception of the outer block. Any exception raised in BEGIN section will propogate to exception of current block, if not handled, then  it flows to exception of OUTER block.
+
+----------------------------------------------------------
+----------------------------------------------------------
+
+(c) SCENARIO 3 :
+
+Error Functions
+
+a) sqlcode - returns error code only
+b) sqlerrm - returns error code & message 
+
+** these functions should not be used in the SQL statements directly.
+
+--
+create table errlog 
+(error_mesg varchar(500), errdt date);
+--
+
+declare
+ vname varchar(20);
+ vt    varchar(2000);
+begin
+ select ename
+ into	vname
+ from	emp
+ where  empno = 0;
+exception
+   when others then
+	--dbms_output.put_line('id not exists');
+	vt := sqlerrm;
+	insert into errlog
+		values(vt, sysdate);
+	commit;
+end;
+/
+
+
+NOTE: if SQLCODE = 0 then, it is successful [no errors]
+
+
+ERROR 		ERRORCODE ** ERRORNUMBER
+		(SQLCODE)
+=============================================================
+too many rows	-1422	 ** -1422
+no data found	+100	 ** -1403
+user-defined	+1	 ** +1
+=============================================================
+
+
+(d) SCENARIO 4 :
+
+Re-raising an exception
+-----------------------
+- We have to use "RAISE" keyword at the last in exception handler section.
+- Re-raising will throw-back [re-raise] the same error after it is being handled.
+
+
+declare
+ vname varchar(20);
+ vt    varchar(200);
+begin
+ select ename
+ into	vname
+ from	emp
+ where  empno = 0;
+exception
+   when others then
+	vt := sqlerrm;
+	insert into errlog
+		values(vt, sysdate);
+	commit;
+	raise;
+end;
+/
+
+
+(d) SCENARIO 5 :
+
+RAISE_APPLICATION_ERROR
+=======================
+-> It is an in-built Stored Procedure that helps to display user message in the    
+   form of Oracle error format.
+
+-> It also performs rollback automatically.
+-> It can take error code from -20000 to -20999  [1000 error codes] only.
+-> The error message can be upto 2048 bytes long
+
+-> raise_application_error( code , message, true/false );  --default is false.
+	[if TRUE, it keeps all the errors in error stack]
+
+-> used in BEGIN & EXCEPTION section
+
+declare
+  vname  varchar(20);
+  veno   number := &empno;
+begin
+   if veno < 0 then
+     raise_application_error(-20009, 'empno should not be negative!!');
+   end if;
+   select ename
+   into   vname
+   from   emp
+   where  empno = veno;
+   dbms_output.put_line(vname);
+exception
+   when no_data_found then
+   	raise_application_error(-20007, 'Invalid empno!!');
+end;
+/
+==============================================================
+-- We can use only in BEGIN section as shown below:
+begin
+ ..
+ if vsal > 2000 then
+	raise_application_error(-20009, 'salary is very high!!');
+ end if;
+ ..
+end;
+/
+
+
+==============================================================
+--Assignment
+--program to continue the load even after some error occurs in between..
+
+CREATE TABLE TEST (ID NUMBER PRIMARY KEY);
+
+INSERT INTO TEST VALUES(5);
+
+
+INSERT INTO TEST VALUES(15);
+
+
+INSERT INTO TEST VALUES(25);
+
+
+INSERT INTO TEST VALUES(65);
+
+COMMIT;
+
+--
+
+begin
+  
+  for i in 1..100
+  loop
+    insert into test
+	values(i);
+  end loop;
+
+end;
+
+/
+=================================================================
+
+Assignment
+==========
+Differences between RAISE & RAISE_APPLICATION_ERROR
+
+
+
+======================================
+HANDLING MULTIPLE NO-DATA-FOUND ERRORS
+======================================
+
+Method 1:
+
+==flag method, captuers only the first stmt that throws -1403 exception==
+Advantage: Lesser code
+Disadvantage: captures first exception only
+
+declare
+  vf varchar(1);
+begin
+  vf := 1;
+  select ename into vnm from emp where empno=7788;
+  vf:=2;
+  select dname into dnm from dept where deptno=10;
+exception
+    when no_data_found then
+	if vf=1 then
+       	   dbms_output.put_line('emp not exists');
+ 	elsif vf=2 then
+	   dbms_output.put_line('deptno not exists');	
+	end if;
+end;
+/
+
+
+Method 2:
+
+==we can use multiple PLSQL Blocks, so that we can get all the exceptions==
+Advantage: captures all the exceptions
+Disadvantage: more code 
+
+begin
+  begin
+    select ename into vnm from emp where empno=veno;
+  exception
+    when no_data_found then
+	dbms...('emp not exists');
+  end;
+  begin
+    select dname into dnm from dept where deptno=vdno;
+  exception
+    when no_data_found then
+	dbms...('deptno not exists');
+  end;
+end;
+/
+
+=================================================================
+
+USER-DEFINED EXCEPTION HANDLERS :-
+==================================
+
+- We can create user-defined handlers for the errors for which Oracle hasn't provided pre-defined handlers.
+- We need to use PRAGMA EXCEPTION_INIT for creating user-defined handlers.
+
+pragma    exception_init(exception_name, -ve errorcode)
+
+- EXCEPTION_INIT is a pragma which helps to create user-defined handler.
+- EXCEPTION_INIT associates an exception handlers to a oracle error code.
+
+- EXCEPTION_INIT can also be used for creating handlers for pre-defined handlers as well.
+
+
+=========program to handle NULL error==========================================
+begin
+ insert into dept
+  values(null, 'test','test');
+end;
+/
+
+
+Eg-1
+====
+declare
+ x exception;
+ pragma    exception_init(x, -1400);
+begin
+ insert into dept
+  values(null, 'test','test');
+exception
+  when x then
+	raise_application_error(-20007,'Deptno is Mandatory!!!!!');
+end;
+/
+
+
+Eg-2
+====
+declare
+ x exception;
+ y exception;
+ pragma    exception_init(x, -1400);
+ pragma    exception_init(y, -12899);
+begin
+ insert into dept
+  values(null, 't','test');
+exception
+  when x then 
+	dbms_output.put_line('deptno is a must !!');
+  when y then
+	dbms_output.put_line('size more');
+end;
+/
+
+
+====================================================
+
+
+ASSIGNMENT
+==========
+-WRITE A PROGRAM TO HANDLE PARENT KEY NOT FOUND ERROR.
+
+
+====================================================
+
+=========
+Warnings:
+=========
+
+- Warnings are used for improving the code.
+- Warnings will not stop the execution, but just gives an informative message.
+- Introduced in 10g.
+- BY default warnings will be turned-off
+
+Types
+=====
+a) Performance
+b) Information
+c) Severe
+
+
+--Setting the WARNINGS in the SESSIOn
+
+sql> ALTER session SET PLSQL_WARNINGS='ENABLE:ALL';
+
+sql> ALTER session SET PLSQL_WARNINGS='ENABLE:SEVERE';
+
+sql> ALTER session SET PLSQL_WARNINGS='DISABLE:SEVERE';
+
+
+
+Severe Warning Messages PLW(5000-5999)
+PLW-05004 - Identifier is also declared in STANDARD or is a SQL builtin
+PLW-05005 - Function returns without value
+
+create or replace function add_nums
+return number
+is
+   a  number := 10;
+   b  number := 10;
+   p1 number;
+begin
+   p1 := a+b;
+end;
+/
+
+--------------------------------------------------------------
+
+Informational Warning Messages PLW(6000-6249)
+PLW-06002 - Unreachable code
+
+
+create or replace procedure test_sp
+is
+  a number;
+begin
+ a:=2;
+ if a>10 then
+	dbms_output.put_line('hi');
+ else
+	dbms_output.put_line('hello');
+ end if;
+end;
+/
+
+
+--------------------------------------------------------------
+Performance Warning Messages PLW(7000-7249)
+PLW-07204 - Implicit conversion will lesser performance
+PLW-07206 - Analysis suggests that the assignment to a variable may be unnecessary 
+
+
+==========================================================================================
+
+
+

@@ -1,0 +1,21 @@
+
+SP			Trigger
+========================================================================
+
+returns a value		Cannot a return a value [can't have any arguments]
+
+
+called explicitly	fired implicitly
+
+
+we can use
+COMMIT & ROLLBACK	cannot be used directly, 
+			we need to use PRAGMA "AUTONOMOUS TRANSACTION" to use any TCL commands.
+
+
+no DECLARE keyword  	DECLARE keyword is used at declare section
+is used
+
+
+SP can't call a 	A Trigger can call a SP by referring its name.
+trigger

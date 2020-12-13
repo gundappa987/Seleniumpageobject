@@ -1,0 +1,1184 @@
+
+
+
+====================================
+Procedures / Stored Procedures / SP
+====================================
+- A procedure/SP (Stored Procedure) is a reusable PL/SQL program which may or maynot return a value.- A procedure is stored in the Database.
+- A procedure has a name
+- A procedure can be called more than once.
+- A procedure will be compiled first, and it will be executed only without re-compilation later.
+
+Advantages
+==========
+- Resuable
+- Better Security 
+- Better performance (avoids re-compilations)
+- Can return values and accept parameters
+
+
+Difference between SP & Anonymous blocks
+========================================
+
+	PROCEDURE				Anonymous PLSQL Program / Block
+=================================================================================
+
+They will have a name			No Name
+
+
+SP may or maynot return a value		Cannot return a value
+
+
+Stored in the Database			Not stored in the Database
+
+
+Better peformance(once compilation)	Lesser Performance(repeated compilation)
+
+
+Reusable				Not Reusable
+
+=================================================================================
+
+Parameter Types
+================
+a) Formal parameters : used during creation of SP
+b) Actual parameters : used during calling of a SP
+
+
+Syntax
+======
+
+
+create or replace procedure sp_name
+(
+  param_name1	Param_mode	Datatype,  -- } formal parameters
+  param_name2	Param_mode	Datatype,  -- }
+  ..
+  ..
+)
+IS
+  ..
+  ..  } Declarative section 
+BEGIN
+   .. } Executable section
+   .. 
+EXCEPTION
+   .. } error handling section
+   .. 
+END;
+/
+
+===============================================================
+SQL> exec sp_name(val1, val2, ....); --> actual paramaters
+===============================================================
+
+SQL> begin
+	  sp_name(val1, val2, ....);  --> actual paramaters
+     end;
+/
+===============================================================
+
+Parameter modes:-
+=================
+IN	: by default a parameter is IN
+	: it carries a value into a SP
+	: this parameter cannot be modified within SP
+	: it acts like a constant (initialized constant)
+
+OUT	: it returns a value from SP
+	: only one value can be returned a single parameter
+	: we can have more than one OUT parameter
+	: it acts like un-initialized variable
+	
+IN OUT	: combination of IN & OUT
+	: it can carry value into a SP and same return a value
+	: the data type of both IN & OUT should be same
+	: it acts like initialized-variable
+===============================================================================
+
+Eg:- Write a SP to add any 2 nums and return the sum of them.
+
+create or replace procedure add_nums
+(
+   p1 in 	number,
+   p2 		number,
+   p3 out	number
+)
+IS
+
+begin
+
+   p3 := p1 + p2;
+   
+end;
+/
+-------------testing the stored procedure-------------------
+sql> variable vt number;
+sql> exec add_nums(40,50, :vt);
+sql> print vt
+============================================================
+
+Eg:- Write a SP to return ENAME a given empno.
+
+create or replace procedure GET_NAME
+(
+  p_empno  IN      NUMBER,
+  p_ename  OUT     VARCHAR
+)
+is
+begin
+   select  ename
+   into    p_ename
+   from    emp
+   where   empno = p_empno;
+end;
+/
+
+--unit testing
+sql> variable xname varchar2(20);
+
+sql> exec get_name(7788, :xname);
+
+sql> print :xname;
+
+
+=============================================================
+Eg:- Write a SP to return ENAME, SAL, JOB, DEPTNO for a given empno.
+
+create or replace procedure GET_DETAILS
+(
+  p_empno  IN      NUMBER,
+  p_ename  OUT     VARCHAR,
+  p_sal	   OUT	   NUMBER,
+  p_job	   OUT 	   VARCHAR,
+  p_dno	   OUT	   VARCHAR
+)
+is
+begin
+   select  ename,sal,job, deptno
+   into    p_ename,P_sal, P_job, P_dno
+   from    emp
+   where   empno = p_empno;
+end;
+/
+
+--unit testing
+sql> variable xname varchar2(20);
+sql> variable xsal  number;
+
+sql> variable xjob varchar2(10);
+sql> variable  xdno number;
+
+sql> exec get_name(7788, :xname, :xsal, :xjob, :xdno);
+
+
+sql> print :xname :XSAL ;
+
+
+SQL> SHOW ERR;
+
+
+============================================================
+
+Assignment:- Write a SP to return ALL COLUMNS for a given empno USING %rowtype.
+
+create or replace procedure get_name
+(
+  p_empno   IN      NUMBER,
+  p_DATA    OUT     EMP%ROWTYPE
+)
+is
+
+begin
+select * into p_data from emp where empno=P_empno;
+end;
+/
+
+--unit testing
+declare
+P_data emp%rowtype;
+begin
+get_name(7788, P_data );
+dbms_output.put_line(P_data.ename||'--'||P_data.job ||'--'||P_data.sal||'--'||P_data.hiredate||'--'||p_data.comm);
+end;
+/
+<< WE NEED TO CALL FROM A ANONYMOUS PLSQL PROGRAM >>
+=========================
+
+Eg:- SP To insert a record to dept table by accepting deptno, dname & location
+
+create or replace procedure save_dept
+(
+  pdno in number,
+  pdnm in varchar,
+  ploc in varchar
+)
+is
+
+begin
+	if length(pdnm) > 10 then
+	   raise_application_error(-20009, 'length high!!');
+	end if; 
+	insert into dept values (pdno, pdnm, ploc);
+	commit;
+end;
+/
+
+--unit testing
+
+sql> exec save_dept(45, 'x' , 'ba');
+
+sql> select * from dept;
+
+
+
+========================= 
+Assignments
+=========================
+Consider a table called "PROD"
+=============================
+create table prod
+(
+Prod_ID number (pk),
+PNAME varchar(20),
+PROD_DESC varchar(20)
+)
+/
+=============================
+
+Write a SP to save a Product details
+
+a) PROD_SAVE(PID IN NUMBER, PNM IN VARCHAR, PROD_DESC IN VARCHAR);
+
+VALIDATIONS
+===========
+A) PNAME SHOULD NOT BE NULL.
+B) PID SHOULD NOT BE MORE THAN 5 DIGITS
+
+create or replace procedure prod_save
+(pid 	in number,
+ pnm 	in varchar,
+ pdesc	in varchar
+)
+is
+begin
+  if pnm is null then
+	raise_application_error(-20007, 'Prod Name is mandatory');
+  end if;
+
+  if length(pid) > 5 then  
+	raise_application_error(-20007, 'Invalid prod id..');
+  end if;
+ 
+  insert into prod values(pid, pnm, pdesc);
+
+  commit;
+end;
+/
+====================================================================================
+
+TASK: Perform unit testing for all the scenarios.
+
+sql> exec prod_save(1001, 'mouse', 'test');
+sql> exec prod_save(1001, '', 'test');
+sql> exec prod_save(100111, 'mouse', 'test');
+
+====================================================================================
+
+
+Assignment:-
+============ 
+
+ORDERS table (5 columns)
+========================
+create table orders
+(ORDID NUMBER PRIMARY KEY,
+PID NUMBER references prod(PROD_ID),
+QTY NUMBER CHECK (QTY>0),
+PRICE number(9,2)	default 0
+
+)
+/
+
+- Write a SP to create a new order   (ORD_SAVE) (4 IN parameters)
+
+create or replace procedure prod_save
+(pid 		in number,
+ p_ord_dt 	in date,
+ p_price	in number,
+ p_qty		in number
+)
+begin
+IF TRUNC(p_ord_dt) != trunc(sysdate) then
+raise_application_error(-20007,'date is invalid');
+end if;
+if price<0 OR QTY<0 THEN
+raise_appliaction_error(-20007,'invalide price or qty');
+end if;
+if ord_id primary key then
+raise_application_error(-20007, 'invalide order');
+end if;
+if qty!=50 then 
+raise_application_error(-20007, 'invalide qty');
+end if;
+if to_char(p_ord_dt,'DY') IN ('SAT','SUN') THEN
+raise_application_error(-20007, 'week end');
+insert into orders values(pid, P-ord_dt, P-price, P_qty);
+end;
+/
+
+
+
+VALIDATIONS
+============
+A) ORD_DT SHOULD BE CURRENT DATE (consider only the date part not the time)
+	IF TRUNC(p_ord_dt) != trunc(sysdate)
+B) PRICE & QTY SHOULD NOT BE -VE VALUE
+C) ORD_ID SHOULD BE GENEREATED FROM A SEQUENCE
+D) QTY SHOULDN'T BE MORE THAN 50 IN A SINGLE ORDER  
+E) ORDERS ARE NOT ALLOWED DURING THE WEEK-ENDS -->> if to_char(p_ord_dt,'DY') IN ('SAT','SUN') THEN
+
+
+
+** Write a SP To drop a table? Table name Should be IN Parameter.
+
+** Write a SP that uses CURSOR.
+  create or replace procedure get_cur
+ is
+ cursor c_emp
+is
+select * from emp;
+vt c_emp%rowtype;
+begin
+open c_emp;
+loop
+fetch c_emp into vt;
+exit when c_emp%notfound;
+dbms_output.put_line(vt.ename ||'-'|| vt.job);
+end loop;
+close c_emp;
+end;
+/
+
+unit testing
+call get_cur();
+SQL> call get_cur();
+SMITH-CLERK
+ALLEN-SALESMAN
+WARD-SALESMAN
+JONES-MANAGER
+MARTIN-SALESMAN
+BLAKE-MANAGER
+CLARK-MANAGER
+KING-PRESIDENT
+TURNER-SALESMAN
+ADAMS-CLERK
+JAMES-CLERK
+FORD-ANALYST
+MILLER-CLERK
+scott-Analyst
+
+
+===========================================================
+
+Use OUT parameters for the following:-
+======================================
+- Write a SP to return the highest sal for the given DEPTNO.
+ create or replace procedure get_sal
+ (deno in number,
+  vsal out number
+)
+is 
+begin
+select max(sal) into vsal from emp where deptno=deno group by deptno;
+end;
+/
+ 
+unit testing
+ 
+declare
+v1 number;
+begin
+get_sal(30,v1);
+dbms_output.put_line(v1);
+end;
+/
+  
+ 
+- Write a SP to return the second employee name joined in a given DEPTNO.
+
+create or replace procedure date_datile
+( deno in number,
+ vname out varchar
+)
+is
+ begin
+select ename into vname from (select ename, dense_rank() over(partition by deptno order by hiredate desc) as rak from emp
+where deptno=deno)
+where rnk=2;
+end;
+/
+testing
+declare
+v1 varchar(20);
+begin
+high_sal(30,v1);
+dbms_output.put_line(v1);
+end;
+/
+
+
+create or replace procedure date_detile
+as
+cursor c1
+is
+select * from (select ename, sal , deptno  , dense_rank() over(partition by deptno order by sal desc) as rnk from emp  ) where  rnk<=2;
+ vt c1%rowtype;
+begin
+open c1;
+loop 
+fetch c1 into vt;
+exit when c1%notfound;
+dbms_output.put_line(vt.ename||'   '||vt.sal || '  '||vt.deptno ||'   '||vt.rnk);
+end loop;
+end;
+
+  
+  
+
+- Write a SP to update the salary for a given EMPNO by 20% then return new sal.
+
+create or replace procedure sal_scale
+(eno in number)
+is 
+begin
+update emp set sal=sal+sal*0.2 where empno=eno;
+end;
+/
+
+testing
+
+exec sal_scale(7788);
+
+ 
+
+
+===============================================================================
+
+Methods of Calling the Procedure/Function
+=========================================
+
+a) Positional Notation 		- based on the position, here we cannot change
+				  the order of the parameter,	
+
+b) Named Notation (FP => AP) 	- based on the name, here we can change order of
+			  	  the parameter. But it would be too lengthy
+				  to mention all the parameters if we have more 
+  				   number of parameters.
+
+c) Mixed Notation(a+b) 		- mixture of positional & named notation.
+				  First we need to mention positional & then named.	
+Eg:-
+===
+procedure save_emp
+(
+ peno   number,
+ pname  varchar,
+ psal   number
+)
+==============================
+
+a) Positional Notation
+======================
+
+sql> exec save_emp(7788,'scott',2000);
+
+================
+
+b) Named Notation
+=================
+
+sql> exec save_emp(peno=>7788, psal=>2000, pname=>'scott' );
+
+============
+
+c) Mixed Notation
+=================
+sql> exec save_emp(7788,  psal=>2000, pnm=>'scott');
+
+** first we should use positional and the next should be named..
+
+ 
+NOTE:- 
+[If there is any Datatype mismatch or no. of parameters mismatch]
+
+PLS-00306: wrong number or types of arguments in call to 'SAVE_DEPT'
+
+
+
+========================================
+Passing Default Values to the Parameters
+========================================
+- Only IN Parameters are given with DEFAULT values.
+- If we don't pass values during the execution they will be read from Default values.
+
+- When we use position notation then we can pass default values only from the end.
+- But by using named notation we can pass default values to any parameter.
+
+
+procedure save_dept
+(
+  pdno 	in 	number,
+
+  pdnm 	in 	varchar := 'RES' ,
+
+  ploc 	in 	varchar default 'BAN'
+
+)
+..
+..
+end;
+-------------
+
+exec save_dept(20,'accts','mys'); -- no defaults would be used ..
+
+exec save_dept(20,'SALES');  --> LOC will use the default value.
+
+exec save_dept(20);  --> DNAME & LOC will use the default value.
+
+exec save_dept(20,,'mys'); --> error.
+
+
+exec save_dept(pdno=>20, ploc=>'mys'); --> default is taken as RES for pdnm, 
+						(named notation)
+
+exec save_dept(pdno=>20, pdnm=>'RES', ploc=>'mys'); -- no defaults would be used..
+=========================================================
+
+
+NOTE:
+=====
+** Any compilation errors are stored in USER_ERRORS or ALL_ERRORS view.
+
+
+--Listing All the SPs from User
+SELECT OBJECT_NAME,STATUS FROM USER_OBJECTS WHERE OBJECT_TYPE='PROCEDURE';
+
+--source code
+SELECT TEXT FROM USER_SOURCE WHERE NAME='SAVE_DEPT'; -- CONTAINS THE SOURCE CODE
+
+
+====================================================================
+
+unit testing:-
+ - Done by Developers.
+ - also called as white box testing.
+ - All the scenarios in the program should be tested.
+ - The scenarios are tested by seeing the source code.
+
+==========================================================================
+EXAMPLE FOR "IN OUT" PARAMETER
+==========================================================================
+--write a SP to return salary for a given EMPNO
+
+CREATE OR REPLACE PROCEDURE GET_SAL
+(
+  PVAL  IN OUT NUMBER  -- Formal Parameter
+)
+IS
+  VSAL NUMBER;
+BEGIN
+  SELECT SAL
+  INTO   VSAL
+  FROM   EMP
+  WHERE  EMPNO = PVAL;
+
+  PVAL := VSAL;
+
+END;
+/
+
+===================
+DECLARE
+  VTEMP NUMBER := 7788;
+BEGIN
+  GET_SAL(VTEMP); -- AP
+  DBMS_OUTPUT.PUT_LINE(VTEMP);
+END;
+/
+=================================================================================
+NOTE: For IN OUT Parameter, the dataype should be same.
+=================================================================================
+
+
+*****************************************************************************************
+*****************************************************************************************
+*****************************************************************************************
+*****************************************************************************************
+*****************************************************************************************
+
+
+
+
+=================================================================================
+=================================================================================
+==============================================================================================
+=======  Functions (user-defined functions) ===========
+
+- Function is a reusable program that should return a value.
+- Function should return a value always.
+- Function can be called from a SQL statement.
+- Function can have DML,DDL,DCL,TCL statements.
+- Function can return more than 1 values
+- Function can have OUT parameters, IN OUT parameters as well.
+
+
+Differences
+===========
+
+	PROCEDURE				FUNCTION
+========================================================================
+
+SP may or maynot return a value		Should return a value
+
+
+SP can't be called from SQL 		Can be called from a SQL statement.
+statements			
+					Eg:-
+					a) select get_dname(20) from dual;
+					b) insert into temp
+						values(20, get_dname(20));	
+
+
+SP can't used in expression		Can be used in an expression directly.
+directly.				
+
+declare
+  vsal number;
+  vt   number;				declare
+						vt number;
+begin					begin
+  get_sal(7788, vsal);				vt := get_sal(7788) + 9000;
+  vt := vsal + 9000;				dbms_output.put_line(get_sal(7566));
+  get_sal(7566, vsal);			end;
+  dbms_output.put_line(vsal);
+end;
+
+
+Procedure may or may not have		Should have RETURN keyword.
+RETURN keyword				Otherwise we will get a run-time error.
+					
+
+==============================================================================================
+
+NOTE : Functios will have more flexibility than procedures
+
+
+
+Examples
+========
+
+int add(int a, int b)
+{
+  int c;
+  c = a+b;
+  return c;
+}
+
+main()
+{
+  int x;
+  x=add(5,6);
+  printf(&x,%d);
+}
+
+
+===================================================================
+
+-- Adding 2 numbers and return the sum of them
+
+create or replace function add_nums
+(
+  p1 in number,
+  p2 in number
+)
+return number
+is
+	vsum number;
+begin
+	vsum := p1+p2;
+	return vsum;
+end;
+/
+
+
+-- unit testing
+
+select add_nums(10,50) from dual;
+
+select add_nums(sal,comm) from emp;
+
+===================================================================
+-- WRITE A FUNCTION TO RETURN ENAME FOR A GIVEN EMPNO
+
+CREATE OR REPLACE FUNCTION GET_NAME
+(
+  peno in number
+)
+return varchar -- it is a must , it is return data type [compilation error]
+is
+  vname varchar(20);
+begin
+  select 	ename
+  into		vname
+  from		emp
+  where		empno = peno;
+
+  return vname;  -- it is a must 
+
+end;
+/
+
+
+--executing/calling a function (unit testing)
+
+select get_name(7788) from dual ;
+
+select get_name(7788), get_name(7839) from dual ;
+
+select empno, get_name(empno) from emp ;
+
+
+===================================================================
+
+--Function to return the status for a given empno
+-- status = 'low' if sal <= 2000, else status = 'high' 
+
+CREATE OR REPLACE FUNCTION get_status
+(
+  peno in number
+)
+return varchar 
+is
+  vsal number;
+  vst  varchar(10);
+begin
+  select 	sal
+  into		vsal
+  from		emp
+  where		empno = peno;
+ 
+  if vsal <= 2000 then
+	vst := 'LOW';
+  else
+	vst := 'HIGH';
+  end if;
+
+  return vst;  
+
+end;
+/
+
+-- unit testing
+
+select get_status(7788) from dual;
+
+select ename, sal, get_status(empno) from emp;
+
+
+==========================================================================================
+
+Imp. Notes:
+===========
+
+a) we can call a SP from a function & vice-versa.
+
+b) If we don't return any value from a function, then we get run-time error
+   "ORA-06503: PL/SQL: Function returned without value" error
+
+d) SP & User-defined Function can't have a same name
+
+e) Function should be used, only if we want to return exactly 1 value, else
+   go for SP always(no value or >1 values).
+
+f) A sub-program means a SP or Function.
+
+
+Restrictions for functions to be called from SQL Statements
+-----------------------------------------------------------
+[Scenarios where Functions cannot be called from a SQL statement directly]
+
+a) Function shouldn't have any OUT Parameters.
+    [Function shouldn't return more than 1 value]
+
+b) Function shouldn't return any datatype which is not compatible with SQL.
+   (BOOLEAN, BINARY_INTEGER etc).
+
+c) Function shouldn't have DML statements. But if we use PRAGMA AUTONOMOUS_TRANSACTION, then we can call from a SQL Statements even though it has a DML statements.
+=================================================================================
+
+-- Write a function to return ename,sal & job for a given empno.
+-- example for function returning more than 1 values.
+
+
+create or replace function get_sal_f
+(
+  peno  IN 	number,
+  pnm   OUT	varchar,
+  pjob  OUT	varchar
+)
+return number  -- returning sal
+is
+	vt number;
+begin
+	select	sal,ename,job
+	into	vt,pnm,pjob
+	from	emp
+	where	empno = peno;
+	return vt; -- returning sal.
+end;
+/
+
+
+sql> select get_sal_f(7788) from dual ;  -- error, returning multiple values.
+
+
+
+So, we need to use Anonymous block to test the above function, so flexibility is lost.
+--------------------------------------------------------------------------------------
+sql> declare
+	v1 number;
+	v2 varchar(10);
+	v3 varchar(10);
+     begin
+	v1 := get_sal_f(7788,v2,v3);
+        dbms_output.put_line(v2||v3||v1);
+     end;
+/
+
+
+
+
+Alternatively, we can write procedure itself easily..
+-----------------------------------------------------
+
+sql> 
+create or replace procedure get_sal_p
+(
+  peno  IN 	number,
+  pnm   OUT	varchar,
+  pjob  OUT	varchar,
+  psal  OUT	NUMBER
+)
+is
+begin
+	select	sal,ename,job
+	into	psal,pnm,pjob
+	from	emp
+	where	empno = peno;
+end;
+/
+(unit testing)
+variable v1 number;
+variable v2 varchar2(10);
+variable v3 varchar2(10);
+exec get_sal_p (7788,:v1, :v2,:v3);
+print v1;
+
+=================================================================================
+
+-- example for function having pragma autonomous_transaction
+-- updates the salary by 20% and returns the same
+
+create or replace function upd_sal
+(peno in number)
+return number
+is
+	vsal number;
+	pragma autonomous_transaction;
+begin
+
+   update emp
+	set sal = sal + (sal*0.2)
+	where empno = peno
+	returning sal into vsal;
+
+/* select sal
+   into   vsal
+   from   emp
+   where  empno = peno;
+*/
+
+   return vsal;
+
+end;
+/
+
+
+select upd_sal(7788) from dual;  -- it works because of "autonomous_transaction"
+
+
+====================================================================================
+
+Assignments
+===========
+function to get factorial of a number.
+  create or replace function get_fac
+     (pno in number)
+     return number
+     is
+    v number:=1;
+    begin
+    for i in 1..pno
+    loop
+    v:=v*1;
+   end loop;
+  return v;
+     end;
+  /
+
+ 
+b) function to check prime or not.
+  create or replace function check_prime
+(no in number)
+return varchar
+is 
+ans varchar(20);
+n varchar(10);
+begin
+if (no=2) then
+ans:= 'prime';
+else
+n:=no/2;
+for i in 2..n
+loop
+if (mod (no ,i)=0) then
+ans:= ' not prime';
+exit;
+else
+ans:='prime';
+end if;
+end loop;
+end if;
+return (ans);
+end;
+/
+
+or
+create or replace function prime_nu
+( no in number)
+return varchar
+is
+vout varcahr(10);
+flag number:=0;
+begin
+for i in 2..num_in/2
+loop
+if mod(num_in,i)=0 then
+flag:=1;
+end if;
+end loop;
+if flag=0 then
+vout:='prime';
+else
+vout:= 'not prime';
+end if;
+return vout;
+end;
+/
+unit testing 
+select prime_nu(21) from dual;
+unite testing
+select  check_prime(23) from dual;
+
+
+c) function to count the number of vowles in a given string
+ create or replace function get_vowels
+(pstring in varchar)
+return number
+    is
+   vcnt number:=0;
+  begin
+for i in 1..length(pstring)
+loop
+if substr(pstring, i,1) in ('a','e','i','o','u') then
+vcnt:=vcnt+1;
+end if;
+end loop;
+return vcnt;
+end;
+/
+
+unit testing
+select get_vowels('sachin') from dual;
+
+
+=======================================
+
+d) function to return all the enames for a given deptno (CURSOR)
+     (if i/p is 20. return value is : scott,blake,jones,miller).
+  NOTE: Don't use WM_CONCAT
+
+
+sql>
+create  or replace function emp_name
+      (edno in number) 
+ return varchar
+  is
+    vtemp varchar(200);
+        cursor v1
+        is
+       select ename from emp where deptno=edno;
+        begin
+     for vrec in v1
+    loop
+      	vtemp:=vtemp ||vrec.ename||',' ;
+   
+    end loop;
+     return substr(vtemp, 1, length(vtemp)-1);
+end;
+/
+
+
+select emp_name(20) from dual
+/
+
+============================================================================================
+SQL> /
+--------------------------------------------------------------------------------
+ALLEN,WARD,MARTIN,BLAKE,TURNER,JAMES
+
+Function created.
+
+SQL> select emp_name(30) from dual;
+
+--modify the above program the output anyname having less then 5 char.
+create  or replace function emp_name
+      (edno in number)
+        return varchar
+       is
+       vtemp varchar(200);
+        cursor v1
+        is
+       select ename from emp where deptno=edno;
+        begin
+     for vrec in v1
+    loop
+       
+      if (vrec.ename not like '%L%') and (length(vrec.ename) > 4 ) then 
+      	vtemp:=vtemp ||vrec.ename||',' ;
+      end if; 
+    end loop;
+     return substr(vtemp, 1, length(vtemp)-1);
+end;
+/
+
+
+select emp_name(20) from dual
+/
+
+
+
+
+
+e) Write a function to return status of an employee for his empno.
+   If the salary of the emp is < 2000 then status = 'LOW'
+   If the salary of the emp is < 4000 then status = 'MED'
+   If the salary of the emp is > =6000 then status = 'high'
+  
+  
+      CREATE OR REPLACE FUNCTION get_vsal
+(
+  peno in number
+)
+return varchar 
+is
+  vsal number;
+  vst  varchar(10);
+begin
+  select 	sal
+  into		vsal
+  from		emp
+  where		empno = peno;
+ 
+  if vsal <= 2000 then
+	vst := 'LOW';
+  elsif vsal<4000  then
+
+	vst := 'medium';
+ else
+ vst:= 'high'
+  end if;
+
+  return vst;  
+
+end;
+/
+
+
+f)  function to check whether a number is odd or even?
+ 
+  1  create or replace function odd_num
+  2  (eno in number
+  3  )
+  4  return varchar
+  5  is
+  6  begin
+  7  if mod(eno,2)=0 then
+  8  return'even';
+  9  else
+ 10  return'odd';
+ 11  end if;
+ 12* end;
+SQL> /
+
+Function created.
+
+SQL> select odd_num(23) from dual;
+
+ODD_NUM(23)
+--------------------------------------------------------------------------------
+odd
+
+g) Write a function to drop a table? [ input = Tablename, output => nothing ]
+   clue => RETURN NULL.
+   This function should be called from SQL Statement.
+   create or replace function droptal
+ ( pt in varchar)
+return varchar
+is 
+	pragma autonomous_transaction;
+begin
+execute immediate 'drop table '|| pt ;	
+return null;
+end;
+
+
+
+
+
+h) Write a function to delete an emp for a given empno and return his name.
+    create or replace function del_name
+(peno in n umber)
+
+return varchar
+is
+
+	vname varchar(10);
+	pragma autonmous_transaction;
+begin
+
+ select ename into vname from emps where empno =peno;
+
+ delete from emps where empno = peno;
+
+commit;
+return vname;
+end;
+
+
+
+
+   Also this function should be able from call from SQL Statement.
+ 
+=================================================================================

@@ -1,0 +1,42 @@
+INSTEAD OF TRIGGERS
+===================
+- They are like DML triggers.
+- They are created on Views only.
+- They are always row level whether "FOR EACH ROW" is given or not.
+- They help to update a complex view which otherwise not updateable.
+- Instead of Trigger can be based on more than 1 tables (by using joins).
+
+Eg:-
+====
+
+V1 => EMPNO, ENAME, DNAME, DEPTNO, SAL
+
+CREATE OR REPLACE VIEW V1
+AS
+SELECT A.EMPNO, A.ENAME, B.DEPTNO, B.DNAME,A.SAL
+FROM EMPS A, DEPTS B
+WHERE A.DEPTNO=B.DEPTNO
+/
+
+INSERT INTO V1
+VALUES(9000,'JOHNY', 72, 'PF', 9000)  --> FAILS.
+/
+
+
+CREATE OR REPLACE TRIGGER TEST1
+INSTEAD OF INSERT ON V1
+--FOR EACH ROW
+BEGIN
+	INSERT INTO DEPTS(DEPTNO, DNAME)
+	VALUES(:NEW.DEPTNO, :NEW.DNAME);
+
+	INSERT INTO EMPS(EMPNO, ENAME, DEPTNO, SAL)
+	VALUES(:NEW.EMPNO, :NEW.ENAME, :NEW.DEPTNO, :NEW.SAL);
+END;
+/
+
+INSERT INTO V1
+VALUES(2000,'JOHNY', 72, 'PF', 9000)  --> works..
+/
+
+

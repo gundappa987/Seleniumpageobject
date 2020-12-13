@@ -1,0 +1,35 @@
+11g Enhancements 
+================
+
+a) Compound Triggers
+
+
+
+
+b) We can DISABLE the trigger during creation itself.
+CREATE OR REPLACE TRIGGER tr2
+BEFORE INSERT ON test
+FOR EACH ROW
+DISABLE -->> 11g onwards.
+DECLARE
+ ..
+ ..
+BEGIN
+ ..
+ ..
+END;
+/
+
+c) Using FOLLOWS keyword to change the hierarchy of the triggers.
+
+CREATE OR REPLACE TRIGGER tr1
+BEFORE INSERT ON test
+FOR EACH ROW
+FOLLOWS tr2  -->> from 11g onwards
+BEGIN
+  DBMS_OUTPUT.put_line('111');
+END;
+/
+
+"tr1"  follows "tr2"
+

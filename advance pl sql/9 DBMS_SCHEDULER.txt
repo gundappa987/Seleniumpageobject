@@ -1,0 +1,127 @@
+
+SCHEDULING:
+===========
+ - Executing a code repeatedly at a particular point of time..
+ - DBMS_SCHEDULER [from 10g]   or  DBMS_JOB[ before 10g]
+
+BEGIN
+
+DBMS_SCHEDULER.CREATE_JOB (
+   job_name             => 'TEST',
+
+   job_type             => 'PROCEDURE',
+
+   job_action           => 'SAVE_ORDERS(..)',
+
+   start_date           => '15-JUL-2019 1.00.00AM',
+
+   repeat_interval      => 'FREQ=DAILY', 
+
+   end_date             => '15-SEP-2020 1.00.00AM',
+
+   enabled              =>  TRUE,
+
+   comments             => 'DEMO PROGRAM');
+END;
+/
+
+select * from dba_jobs_running;
+
+select * from dba_jobs;
+
+======================================================
+
+** DBMS_SCHEDULER is having more features than DBMS_JOB.
+** DBMS_SCHEDULER is flexible.
+** We don't use DBMS_JOB from 10g.
+
+
+
+
+
+
+create table temp
+(id number,name varchar(100))
+/
+
+
+CREATE SEQUENCE SEQ start with 1 increment by 1
+/
+
+
+CREATE OR REPLACE PROCEDURE INS_DATA
+IS
+BEGIN
+   INSERT INTO TEMP
+           VALUES(SEQ.NEXTVAL,to_char(sysdate,'dd-mm-yyyy hh:mi:ss');
+   commit;
+   dbms_lock.sleep(20);
+END;
+/
+
+VARIABLE jobno NUMBER;
+
+BEGIN
+   --Runs for every 24 hrs.
+   --DBMS_JOB.SUBMIT(:jobno, 'ins_data' SYSDATE, 'SYSDATE + 1');
+   DBMS_JOB.SUBMIT(:jobno, 'ins_data;', SYSDATE, 'SYSDATE + 1/(24*60)');
+   COMMIT;
+END;
+/
+
+
+print jobno;
+
+exec dbms_job.remove(31);
+
+--	select sid,job from dba_jobs_running;
+
+INTERVAL
+========
+'SYSDATE + 7'  			-	Exactly seven days from the last execution
+'SYSDATE + 1/48'  		-	Every half hour
+
+'NEXT_DAY(TRUNC(SYSDATE), ''MONDAY'') + 15/24'  - Every Monday at 3PM
+
+=======================================================================
+
+SUBMIT
+======
+Submits a job to the job queue. 
+
+REMOVE
+======
+Removes a specified job from the job queue.
+
+CHANGE
+=======
+Alters a specified job that has already been submitted to the job queue. 
+You can alter the job description, 
+the time at which the job will be run, 
+or the interval between executions of the job.
+
+WHAT
+====
+Alters the job description for a specified job.
+
+NEXT_DATE
+=========
+Alters the next execution time for a specified job.
+
+INTERVAL
+========
+Alters the interval between executions for a specified job.
+
+
+BROKEN
+=======
+Sets or resets the job broken flag. 
+If a job is marked as broken, Oracle does not attempt to execute it.
+
+
+RUN
+===
+Forces a specified job to run.
+
+
+=

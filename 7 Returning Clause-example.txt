@@ -1,0 +1,98 @@
+RETURNING clause
+================
+
+- It is used to return a value from a DML statement.
+- It avoids SELECT statement and as a result we will get better performance.
+- In case of UPDATE & INSERT, it returns new Value.
+- In case of a DELETE, it returns old value.
+
+
+==============================================================================================================
+Eg:-
+====
+Write a SP to Update Salary by 20% for a given empno and return the new salary. (Without RETURNING)
+
+create or replace procedure get_new_sal
+(
+  peno	IN	NUMBER,
+  psal  OUT	NUMBER
+)
+IS
+begin
+
+ update emp
+	set sal = sal + (sal*0.2)
+	where empno=peno;
+
+ select sal
+	into psal
+	from emp
+	where empno = peno ;
+end;
+/
+unit testing
+varible v number;
+exec get_new_sal(7788,:v);
+print v;
+
+==============================================================================================================
+
+Eg:-
+====
+Write a SP to Update Salary by 20% for a given empno and return the new salary. (With RETURNING)
+
+create or replace procedure get_new_sal
+(
+  peno	IN	NUMBER,
+  psal  OUT	NUMBER
+)
+IS
+begin
+
+ update emps
+	set sal = sal + (sal*0.2)
+	where empno=peno
+	RETURNING sal INTO psal ;   -->> Returns a value in a DML statement.
+end;
+/
+unit testing
+variable v number;
+exec get_new_sal(7788,:v);
+print v;
+
+
+
+
+
+==============================================================================================================
+
+
+Assignments
+===========
+(1) Write a Stored procedure nor FUNCTION to delete an emp for a given empno and print the name of the person who has been deleted. 
+ (RETURNING & without using RETURNING) & Perform Unit Testing as well.
+Make sure this function should be able to call from a function.
+
+hint:-
+======
+   create or replace function del_name
+  (eno in number)
+   return varchar
+    Is 
+    vnm varchar(20);
+    pragma autonomous_transaction;
+    begin
+   delete from emps
+   where empno=eno
+   returning ename into vnm;
+   commit;
+   end;
+  /
+
+(2) Differences between RETURN & RETURNING (2-4 differences)
+
+==============================================================================================================
+
+
+
+

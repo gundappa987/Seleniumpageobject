@@ -1,0 +1,61 @@
+
+
+Types:
+======
+
+a) DML Triggers
+b) DDL Triggers
+c) "Instead of" Triggers
+d) System Events Triggers
+e) Compound Triggers (11g)
+
+
+DML Triggers:-
+==============
+ - Created on DML Statements.
+ - can be row level or statement level  [table level]
+
+
+Components of the DML Triggers
+==============================
+a) Trigger Name
+
+b) Timing (Before/After)
+
+c) Event (I/U/D)
+
+d) Level (Row Level / Table Level)  - default is Table Level
+
+e) Triggering Table
+
+
+Types of DML Triggers:
+----------------------
+----------------------
+
+Timing		Event		Level
+  (2)		  (3)		  (2)	       
+===============================================
+BEFORE		INSERT		ROW LEVEL
+		UPDATE		TABLE LEVEL (statement level)
+AFTER		DELETE
+===============================================
+
+12 Types of DML triggers:-
+==========================
+a) BEFORE INSERT ROW LEVEL
+B) BEFORE INSERT STATEMENT LEVEL
+C) BEFORE UPDATE ROW LEVEL 
+d) BEFORE UPDATE STATEMENT LEVEL
+E) BEFORE DELETE ROW LEVEL
+F) BEFORE DELETE STATEMENT LEVEL
+G) AFTER INSERT ROW LEVEL
+H) AFTER INSERT STATEMENT LEVEL
+I) AFTER UPDATE ROW LEVEL
+J) AFTER UPDATE STATEMENT LEVEL
+K) AFTER DELETE ROW LEVEL
+L) AFTER DELETE STATEMENT LEVEL
+--------------------------
+------------------------------
+
+

@@ -1,0 +1,147 @@
+object type
+===========
+- It is an user-defined datatype.
+- It helps to store more than 1 columns in a single variable.
+- It is similar to CLASS in JAVA.
+- It reduces the number of variables required for a program.
+- It is stored in the database (Re-usable)
+- It can be used in both SQL(DB Level) & PLSQL level.
+- It can have methods (sub-programs / SP or Function) in it.
+- Object types helps in reusable coding.
+ 
+
+Eg:-
+====
+
+emps_det
+========
+empno
+ename
+sal
+address
+city
+state
+pincode
+create table emps_det
+(empno number,
+ ename varchar(20),
+sal numbe,
+address varchar(20),
+city varchar(20),
+state varchar(20),
+pincode number(10)
+)
+
+cust_det
+========
+custid
+cname
+address
+city
+state
+pincode
+ create table cust_det
+(custid number,
+ cname varchar(20),
+ address varchar(20),
+ city varchar(20),
+state varchar(20),
+ pincode number
+)
+
+object types
+============
+create or replace type add_type_data
+as object
+(
+	address varchar(9),
+	city    varchar(5),
+	state	varchar(3),
+	pincode number
+)
+/
+
+----------------
+create table cust_det
+(
+  cid		number,
+  cname		varchar(20),
+  cadd		add_type_data    -- new object type
+)
+/
+------------------
+create table emp_det
+(
+  eid		number,
+  ename		varchar(20),
+  sal		number,
+  eadd		add_type_data
+)
+/
+------------------------------------------------
+DESC EMP_DET;
+DESC ADD_TYP_DATA;
+------------------------------------------------
+insert into cust_det values(101,'Sony', add_type_data('No 12','Ban','KAR',99999));
+insert into cust_det values(102,'DELL', add_type_data('No 15','Ban','Kar',22222));
+-------------------------------------------------
+SELECT * FROM CUST_DET;
+
+select cname, A.cadd.pincode from cust_det A;
+	 --> Table Alias is must when we select columns inside an object
+
+----------------------------------------------------------------
+update cust_det A set a.cadd.pincode = 4444 where cname = 'DELL' ;
+----------------------------------------------------------------
+
+==========================================================
+
+delete from cust_det where cid = 1001;
+
+delete from cust_det A where A.cadd.state = 'KAR';
+
+==========================================================
+
+
+-- object types would be present in "user_types"
+
+sql> select type_name from user_types ;
+
+
+sql> drop type add_typ_data; -- fails if it is referenced by different objects
+
+--to modify an existing object type
+sql> alter type ............
+
+=========================================================
+
+-- can be used within PLSQL as well
+
+declare
+    	vtemp add_type_data; 
+begin
+	select address,city,state,pincode
+	into vtemp
+	from cust11
+	where cid = 101;
+	dbms_output.put_line(vtemp.address || vtemp.city);
+end;
+/
+
+==========================================================
+
+Differences   ******************
+===========
+
+PL/SQL Records				Object Types
+====================================================
+a. Can't have methods			    Can have methods (SP/Funtion)
+b. Not Re-usable			                       Re-usable
+c. Only at PLSQL level		                      Both SQL & PLSQL
+d. Not stored in DB Level		                       Stored in DB Level.
+E. can be created %ROWTYPE		     Cannot be created using %ROWTYPE
+
+Disadvantage of Object types
+=============================
+- complex to work (coding like select,insert,update) on object types.
+

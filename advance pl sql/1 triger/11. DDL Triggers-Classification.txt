@@ -1,0 +1,49 @@
+DDL TRIGGERS
+============
+
+--DDL Triggers are created on DDL statements..
+--They can be schema level or object level..
+
+
+Timing		Event			Level
+================================================
+BEFORE		TRUNCATE		
+		DROP			SCHEMA
+		ALTER			
+		RENAME			OBJECT
+		CREATE
+		DDL
+AFTER
+		..
+		..
+=====================================================
+
+create or replace trigger stop_drop
+before drop on emp
+begin
+
+ raise_application_error(-20009, 'drop is not allowed');
+
+end;
+/
+
+=================================================
+
+
+BEFORE DROP SCHEMA --> SCHEMA LEVEL
+{
+ ..
+ ..
+}
+
+BEFORE DROP EMP  --> OBJECT LEVEL
+{
+..
+..
+}
+
+AFTER DDL EMP    --> OBJECT LEVEL, for all the DDL events
+{
+..
+..
+}

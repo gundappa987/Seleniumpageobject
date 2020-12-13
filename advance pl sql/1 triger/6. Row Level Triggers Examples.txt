@@ -1,0 +1,159 @@
+ROW LEVEL TRIGGERS :-
+=====================
+- Executed for each and every row being modified.
+- Here we should use co-relation identifiers (OLD & NEW) to capture the affected rows.
+
+
+:OLD & :NEW -
+============= 
+**co-relation identifiers
+**these are record type variables,they have datatype as "triggeringtable%ROWTYPE"
+**can be used to capture the modified records inside the row level triggers
+**can be used only in row level triggers
+
+
+
+		:OLD		 	:NEW 
+=======================================================
+INSERT		NULL			new values
+UPDATE 		old values		new values
+DELETE		old values		NULL
+========================================================
+
+
+
+Trigger Example:
+================
+-write a trigger to store all the deleted records from emp table to emp_log.
+
+===============================================================
+-- create emp_log table
+create table emp_log
+(
+empno  number,
+ename  varchar(9),
+deptno number,
+JOB    VARCHAR(10),
+deldt  date
+)
+/
+
+
+-- trigger to capture all the deleted records to emp_log table.
+se
+
+delete from emp where deptno=20
+/
+
+
+-- trigger to capture all the deleted records to emp_log table only for MANAGERs.
+create or replace trigger test_trig2
+after delete on emp
+for each row
+begin
+	if :old.job = 'MANAGER' THEN
+		insert into emp_log
+		values (:old.empno, :old.ename, :old.deptno, :OLD.JOB, sysdate);
+	END IF;
+
+end;
+/
+
+
+--testing.
+delete from emp where deptno=20
+/
+
+===============================================================
+
+
+Assignments:
+a) Write a trigger to stop a new employee joining with a salary more than 10000.
+
+create or replace trigger chk_sal_emps
+before insert on emp
+for each row
+begin
+   if :new.sal > 10000 then
+	raise_application_error(-20009, 'high salary');
+   end if;
+end;
+/
+
+--testing
+sql> insert into emp(empno, deptno, sal) values(9898,'john',20000); --error.
+================================================================
+
+
+
+b) Write a trigger to stop an employee joining on a week-end. 
+  create or replace trigger emp_join
+ before insert on emp 
+for each row 
+begin
+if TO_CHAR(:NEW.HIREDATE,'DY') IN ('SAT','SUN') THEN
+ raise_application_error(-20007, 'NOT VALIDE DATA');
+END IF;
+/
+
+INSERT INTO EMP (EMPNO, ENAME, DEPTNO, SAL, HIREDATE) VALUES(9999, JOH, 30, 3000, 07-APR-2019);
+
+c) Write a trigger to insert HIGEST salaried person name when a record deleted from table.
+ create or replace trigger high_sal
+ before insert on emp 
+for each row 
+begin
+  if :new.sal>
+ 
+
+d) Write a trigger to disallow an employee joinig between 6PM to 10 AM on weekdays.
+
+   create or replace trigger emp_join1
+ before insert on emp 
+for each row 
+begin
+if TO_CHAR(:NEW.HIREDATE,'10AM TO 7PM') THEN
+ raise_application_error(-20007, 'NOT VALIDE DATA');
+END IF;
+END;
+/
+(EMPNO, ENAME, SAL, HIREDATE) VALUES (9999, 'JOH', 30000, '07-APR-2019');  
+
+
+E)write a trigger to record the salary of an employee (previous & current one)
+whenever his salary is modified(updated).
+
+create table emp_s
+(empno 		number,
+ ename 		varchar(20),
+ prev_sal 	number,
+ cur_sal	number,
+ chang_dt	date
+)
+/
+
+
+create or replace trigger log_sal_mod_trig
+after update of sal on emp_s
+for each row
+BEGIN
+if
+
+/
+
+--testing
+update emp set sal = 4000 where empno = 7788;
+update emp set sal = 6000 where empno = 7788;
+
+emp_s
+=====
+empno	ename	prev_sal	cur_sal		change_dt
+7788	SCOTT	2000		4000		..
+7788	SCOTT	4000		6000		..
+
+
+
+update emp set comm = 1000 where empno = 7788;  -- trigger shouldn't fire for this ..
+
+
+

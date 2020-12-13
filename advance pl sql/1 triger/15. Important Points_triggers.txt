@@ -1,0 +1,69 @@
+NOTES:
+======
+
+- Between trigger & constraint, trigger is fired first .
+
+
+- When we delete the records from a table then DELETE triggers are fired but for TRUNCATE statement, no delete triggers are fired.
+
+- We cannot create a trigger for a SELECT statement
+
+- The size of the trigger can be only upto 32K. If the size is more than this, create a separate SP/function and call the same from the trigger.
+
+create or replace trigger test_trig
+before delete on emp
+begin
+   ..
+   ..
+   test_sp; -- SP is called inside a trigger ..
+   ..
+   ..
+end;
+/
+
+
+- The trigger can't return 
+value. But use global variable to return the same..
+  
+trig1 ------writes a value-------> Global Variable ------> reads a value -->trig2
+
+create or replace package testpack
+is
+	v1 number := 100;
+end;
+/
+
+create or replace trigger t1
+before insert on emp
+begin
+  testpack.v1 := 200;
+end;
+/
+
+create or replace trigger t2
+after insert on emp
+begin
+  dp (testpack.v1);
+end;
+/
+
+** In the same way(global variables) we can also return a value from SP/Function withut using OUT parameters.
+
+ 
+- A single trigger can be created only on a single table. If we want to create on multiple tables, then we should create a view from those two tables, then create a instead of trigger on the view.
+
+create view v1
+as
+select a.ename, b,dname from emp a, dept b
+where a.deptno=b.deptno
+/
+
+create or replace trigger test_t1
+instead of delete on v1
+begin
+  ..
+  ..
+end;
+/
+
+

@@ -1,0 +1,123 @@
+Oracle 12c Features
+===================
+
+
+a) Size can be upto 32676 at the SQL Level (DB Level) for CHAR & VARCHAR datatypes
+
+
+b) truncate table <Parent> cascade;
+===================================
+We can cascade the TRUNCATE command as well, if we have set ON DELETE CASCADE during the FK creation.
+
+create table test
+(id number references prod(pid) on delete cascade);
+
+
+c) to fetch top 5 salaries
+==========================
+select * 
+from (select * from emp order by sal desc)
+where rownum <= 5;
+
+12c
+====
+select *
+from emp
+order by sal desc
+fetch first 5 rows only;
+
+d) Session Level Sequences
+===========================
+
+SQL> create sequence tseq session; -- the initial value will be reset for
+					 every session exit & reconnect.
+
+SQL> create sequence gseq global; -- default.
+
+
+
+
+
+
+
+e) Invisible Column
+====================
+
+SQL> create table t4 (col1 number, col2 number invisible);
+
+sql> desc t4; -- only "col1" is displayed
+
+sql> select * from t4;  -- only col1 is displayed
+
+sql> select col1, col2 from t4; --both columns displayed
+
+SQL> set colinvisible on;
+
+SQL> desc t4; -- both columns would be displayed.
+
+SQL> create index in_t4 on t4(col2); --invisible column could be indexed
+
+
+
+
+
+f) Identity Column
+===================
+
+sql>  create table t6 (id number generated always as identity, name varchar(20));
+
+sql> insert into t6(name)
+	values('scott'); 
+
+sql> insert into t6(name)
+	values('ford'); 
+
+sql> insert into t6
+	values(2, 'blake');  -- gives error
+
+
+sql> select * from t6;
+
+id	name
+------------
+1	scott
+2	ford
+
+
+sql>  create table t6 
+      (id number, 
+       col1 number generated always as identity (start with 5 increment by 4) );
+
+
+
+
+g) Default Values for Sequences
+===============================
+
+sql>  create table temp
+	(id number default tseq.nextval, name varchar(20));
+
+  insert into temp values(9,'x'); -- works
+
+  insert into temp(name) values('y'); -- works, "id" column is read from "tseq".
+
+select * from temp
+id	name
+9	x
+1	y
+
+
+
+
+
+
+(h)
+12c feature of indexes:-
+========================
+
+Before 12c, we can't have multiple indexes of same type on the same column.
+But in 12c we can have, but only one index should be visible.
+
+
+
+

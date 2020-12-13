@@ -1,0 +1,21 @@
+RL:-   [ row level triggers ] 
+====
+Fired once each for every record.
+It will not fire when no records are affected.
+WHEN clause can be used
+Co-relation identifiers (old & new) can be used
+It is not the default type of trigger (FOR EACH ROW)
+
+SL:-   [table level triggers / statement level triggers]
+====
+Fired only once irrespective of number of records affected
+It will fire once even when no records are affected.
+WHEN clause can't be used
+Co-relation identifiers (old & new) can't be used
+It is the default type of trigger
+
+
+Eg:-
+
+If a statement affects 10 rows then, SL => 1, RL => 10
+If a statement affects 0  rows then, SL => 1, RL => 0

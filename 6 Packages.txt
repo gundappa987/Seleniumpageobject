@@ -1,0 +1,589 @@
+
+========
+PACKAGES
+========
+
+- Package is a DB Object (PLSQL Program) which contains 1 or more sub-programs (SP/Function).
+- Package is collection of sub-programs.
+- Package can have Variables, constants, record types, cursors, exceptions apart from SP & FUnctions.
+- Package can't have triggers.
+ 
+Advantages
+==========
+A) BETTER PERFORMANCE
+B) CREATION OF GLOBAL VARIABLES
+C) OVERLOADING
+D) BETTER MODULARITY
+E) BETTER ENCAPSULATION
+
+
+Components of a Package
+=======================
+
+Package has 2 components
+
+a) Header (Specification/spec.)
+b) Body
+
+Header: 
+=======
+	a) Mandatory.
+	b) Contains only the declarations of sub-programs(not the business logic).
+	c) Anything declared in the header will have public (global) scope 
+		(could be called from outside of a package)
+	d) Any sub-programs declared in the header must be defined in the body.
+
+Body
+====
+	a) Optional
+	b) Contains both declarations & defintions (business logic)
+	c) We can have a sub-program only in body without being present in header
+		(private scope)
+	d) Any sub-programs defined only in body but not in header will have 
+	   private scope(couldn't be called from outside of a package)
+
+** Package Header & body will have same name
+** Package header should be created before its body
+
+==============================================================================================================
+
+
+========================================================
+Example 1: Create a package with 1 SP & 1 FUnction in it
+========================================================
+
+create or replace package test_pack   -- header/spec.
+is
+	procedure save_dept
+	(
+		pdno	in 	number,
+		pdnm    in	varchar,
+		ploc	in 	varchar
+	);
+	function get_nm
+	(
+		peno in number	
+	)
+	return varchar;
+	procedure print_data();
+end;
+/
+
+----------------------------------------------------------------------------------------------
+create or replace package body test_pack -- body
+is
+	procedure print_data
+	is
+	begin
+		dbms_output.put_line('hello');
+	end;
+
+	procedure save_dept
+	(
+		pdno	in 	number,
+		pdnm    in	varchar,
+		ploc	in 	varchar
+	)
+	is
+	begin
+		insert into dept values(pdno, pdnm, ploc);
+		commit;
+	end;
+	function get_nm
+	(
+		peno in number	
+	)
+	return varchar
+	is
+		vnm varchar(20);
+	begin
+		select ename	into vnm from emp where empno=peno;
+		return vnm;
+	end;
+end;
+/
+====================================================
+sql> exec test_pack.save_dept(99,'TEST', 'BAN');
+
+sql> select test_pack.get_nm(7788) from dual;
+
+sql> exec test_pack.print_data; -- error.
+
+SQL> SELECT TEXT FROM USER_SOURCE WHERE NAME='TEST_PACK';
+
+SQL> SELECT TEXT FROM USER_SOURCE WHERE NAME='TEST_PACK' and type = 'PACKAGE BODY' ;
+
+-- LIST OF SUB-PROGRAMS WITHIN A PACKAGE
+
+SQL> DESC TEST_PACK;
+
+or
+--
+
+SQL> SELECT PROCEDURE_NAME FROM USER_PROCEDURES WHERE OBJECT_NAME='TEST_PACK';
+
+====================================================
+
+--TO LIST ALL THE STAND-ALONE PROCEDURES
+
+SQL> SELECT OBJECT_NAME FROM USER_OBJECTS WHERE OBJECT_TYPE='PROCEDURE';
+
+====================================================
+
+
+
+==================================================================================
+			Types of Packages
+==================================================================================
+
+a) Pre-defined  packages (In-built packages/Oracle Supplied Packages)
+b) User-defined packages (created by the users)
+
+
+Oracle Supplied Packages(In-built packages)
+===========================================
+DBMS_OUTPUT 	-> prints the output of the programs
+DBMS_SQL  	-> Helps to execute the dynamic SQL statements
+DBMS_XPLAN 	-> prints the o/p of explain plan command
+dbms_scheduler 	-> to schedule the jobs
+
+utl_mail 	->  to send the mails
+
+utl_file 	-> to perform i/p & o/p operation on files
+
+dbms_mview 	 -> to refresh materialized views
+dbms_shared_pool -> to pin/unpin the package to SGA
+DBMS_STATS       -> To generate statstics
+DBMS_RANDOM      -> to generate random numbers.
+..
+.. 
+
+dbms_lock 	 -> to make a program to take more time for execution.
+		    Helps to run a program after another one is completed.
+		    Helps to avoid locks in case if 2 programs running
+		    simultaneously.
+
+begin
+  dbms_output.put_line('hi');
+  dbms_lock.sleep(5);
+end;
+/
+
+
+dbms_metadata	-> To get the metadata for a given object.
+
+select dbms_metadata.get_ddl('TABLE','EMP') FROM DUAL;
+select dbms_metadata.get_ddl('VIEW','V1') FROM DUAL;
+
+
+
+
+
+
+note:
+=====
+STANDARD 	 -> stores our pre-defined functions are stored. (SYS user)
+
+
+SQL> conn / as sysdba
+
+SQL> select standard.length('oracle') from dual;
+
+STANDARD.LENGTH('ORACLE')
+-------------------------
+                        6
+
+
+===============================================================================================================
+				Advantages of Packages
+===============================================================================================================
+A) BETTER PERFORMANCE:-
+-----------------------
+- Whenever we call individual procedures, it will have both Physical & Logical Reads for every call.
+- If we put them in a package, the entire package is loaded at the first call itself with just only one phyical read.
+- This have reduced physical reads and  as a result we will have better performance.
+
+- " Higher the physical reads, lower the performance "
+- Oracle will use Least Recently Used (LRU) model for removing the package from a memory (similar to FIFO).
+
+Pinning:-
+---------
+- Keeping a package in the memory without allowing LRU to apply.
+
+sql> exec dbms_shared_pool.keep('pack1');
+sql> exec dbms_shared_pool.unkeep('pack1');
+
+
+
+(B) CREATION OF GLOBAL VARIABLES
+--------------------------------
+- A global variable can be accessed outside the package as well (or from different programs as well).
+- It should be created at the package header (specification).
+- The global variable value will persist till the end of a session.
+- We can also global constants.
+
+Eg:-
+====
+create or replace package testpack
+is
+   gvar 	pls_integer := 100;
+end;
+/
+---
+begin
+  dbms_output.put_line(testpack.gvar); -- 100
+  testpack.gvar := 200;
+  dbms_output.put_line(testpack.gvar); -- 200
+end;
+/
+--
+begin
+  dbms_output.put_line(testpack.gvar); -- 200
+end;
+/
+
+DROP PACKAGE TESTPACK
+/
+
+NOTE:
+=====
+- We can use a pragma called SERIALLY_REUSABLE that will reset the global variable value for every new call.
+
+create or replace package testpack
+is
+   PRAGMA SERIALLY_REUSABLE;
+   gvar 	pls_integer := 100;
+
+   PRAGMA SERIALLY_REUSABLE;
+   vtest 	pls_integer := 100;
+
+end;
+/
+
+---
+begin
+  dbms_output.put_line(testpack.gvar); -- 100
+  testpack.gvar := 200;
+  dbms_output.put_line(testpack.gvar); -- 200
+end;
+/
+--
+begin
+  dbms_output.put_line(testpack.gvar); -- 100
+end;
+/
+
+
+NOTE:- We can have bodiless package to declare global variables.
+
+---------------------------------------------------------------------------------------------------------------
+
+(C) OVERLOADING
+----------------
+- Overloading means having same names for different functions with different parameters (arguments).
+- The parameters should differ in "number of parameters" or "types of parameters" .
+- Only Packaged sub-programs can be overloaded.
+- Individual sub-programs can't be overloaded.
+
+create or replace package testpack
+is
+  procedure p1
+  (
+    peno in number
+  );
+  procedure p1
+  (
+    peno in number,
+    pdno in number
+  );
+  procedure p1
+  (
+    penm in varchar
+  );
+end;
+/
+
+exec testpack.p1(10);    --> first one   
+exec testpack.p1(10,20); --> second one  
+exec testpack.p1('new'); --> third one   
+exec testpack.p1('10');  --> third one
+
+Restrictions:
+============
+a) Stand-alone sub-programs can't be overloaded, only packaged & local
+   sub-programs can be overloaded.
+
+b)  Parameters belonging to same family can't be Overloaded.
+create or replace package testpack
+is
+  procedure p1
+  (
+    peno1 in number
+  );
+
+  procedure p1
+  (
+    peno in integer
+  );
+end;
+/
+
+c) If the parameters are changing only in their modes, they can't be overloaded.
+
+create or replace package testpack
+is
+
+  procedure p1
+  (
+    peno in number
+  );
+
+  procedure p1
+  (
+    peno out number
+  );
+
+end;
+/
+------------------------------------------------
+
+
+Real-Time Example for overloading
+==================================
+
+create or replace package testpack
+is
+	function get_name
+	(pempno in number)
+        return varchar;
+
+	function get_name
+	(pjob in varchar)
+        return varchar;
+end;
+/
+
+
+create or replace package body testpack
+is
+	function get_name
+	(pempno in number)
+	return varchar
+	is
+		v1 varchar(20);
+	begin
+		select ename into v1 from emp where empno=pempno;
+		return v1;
+	end;
+
+	function get_name
+	(pjob in varchar)
+	return varchar
+	is
+		v1 varchar(20);
+	begin
+		select ename into v1 from emp where job = pjob;
+		return v1;
+	end;
+end;
+/
+
+	
+select testpack.get_name(7788) from dual;
+
+select testpack.get_name('PRESIDENT') from dual;
+
+
+Pre-defined Package with Overloading
+====================================
+
+dbms_output.put_line(20);
+dbms_output.put_line('test');
+
+
+
+Assignments:
+============
+- Write a package (tpack) that contains overloaded function "add_nums" which returns the sum of the numbers.
+
+   add_nums(a number, b number) return number;
+   add_nums(a number, b number, c number)  return number;
+   add_nums(a number, b number, c number, d number)  return number;
+
+  CREATE OR REPLACE PACKAGE TESTPACK
+ IS
+  FUNCTION GET_NAME
+(P1 IN NUMBER,
+ P2 IN NUMBER
+)
+RETURN NUMBER;
+
+FUNCTION GET_NAME
+(P1 IN NUMBER,
+ P2 IN NUMBER,
+ P3 IN NUMBER
+)
+RETURN NUMBER;
+
+FUNCTION GET_NAME
+(P1 IN NUMBER,
+ P2 IN NUMBER,
+ P3 IN NUMBER,
+ P4 IN NUMBER
+ )
+RETURN NUMBER;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY TESTPACK
+IS
+ FUNCTION GET_NAME
+ (P1 IN NUMBER,
+ P2 IN NUMBER
+ )
+RETURN NUMBER
+IS
+V1 NUMBER;
+ BEGIN
+V1:=P1+P2;
+RETURN V1;
+END;
+
+FUNCTION GET_NAME
+(P1 IN NUMBER,
+ P2 IN NUMBER,
+ P3 IN NUMBER
+  )
+  
+  RETURN NUMBER
+ IS 
+ V1 NUMBER;
+BEGIN
+ V1:=P1+P2+P3;
+ RETURN V1;
+END;
+ FUNCTION GET_NAME
+ (P1 IN NUMBER,
+  P2 IN NUMBER,
+  P3 IN NUMBER,
+  P4 IN NUMBER
+ )
+  RETURN NUMBER
+IS
+V1 NUMBER;
+BEGIN
+V1:=P1+P2+P3+P4;
+RETURN V1;
+END;
+END;
+/
+ UNIT TESTING 
+ SELECT TESTPACK.GET_NAME(10,20) FROM DUAL;
+ SELECT TESTPACK.GET_NAME(10,20,30) FROM DUAL;
+ SELECT TESTPACK.GET_NAME(10, 20, 30, 40) FROM DUAL;
+
+sql> exec tpack.add_nums(2,4);
+sql> exec tpack.add_nums(2,4,5);
+sql> exec tpack.add_nums(2,4,5,0);
+
+
+- Write a package (fpack) that contains all the assignments of SP & FUNCTIONS.
+
+
+---------------------------------------------------------------------------------------------------------------
+
+(D) BETTER MODULARITY
+----------------------
+- Let's say a project has 5 modules. Each module's sub-programs can be kept in a separate package and so on. 
+- It provides better management of sub-programs.
+
+---------------------------------------------------------------------------------------------------------------
+
+(E) BETTER ENCAPSULATION
+------------------------
+- Any sub-programs present in a package can't be called directly, we should always prefix package name.
+- It provides additional security.
+
+---------------------------------------------------------------------------------------------------------------
+
+============================
+Disadvantages of Packages :-
+============================
+
+(A) We can't call all the sub-programs at once within package. We should create main program.
+
+
+We cannot call all the Sub-programs of a package at once..
+But alternatively, we can create main program like below:-
+
+create or replace procedure mains
+is
+
+begin
+
+  pack.save_dept(....);
+  pack.get_name(....);
+
+end;
+/
+
+sql> exec mains;
+
+-------------------------
+
+(B) All the sub-programs will be loaded into memory(RAM) whether they are needed or not. This will occupy memory un-necesarily.
+
+
+-----------------------------------------------------------------------------------------------------------
+
+===================
+Forward Declaration
+===================
+- In a mutually calling PRIVATE sub-programs, the compilation would fail due to inter-dependency.
+- We can overcome this problem by declaring one of the sub-program at the begining of the package body which is called as forward declaration ..
+ 
+
+===============================
+
+create or replace package testpack
+is
+	gvar number:=0;
+end;
+/
+
+===============================
+
+create or replace package body testpack
+is
+	-- procedure p1;  -->> forward declaration.
+
+	procedure p2
+	is
+	begin
+		DBMS_OUTPUT.PUT_LINE('HELLO');
+		p1; -- ??
+	end;
+
+	procedure p1
+	is
+	begin
+		DBMS_OUTPUT.PUT_LINE('HI');
+		p2;
+	end;
+end;
+/
+
+===================================
+
+Note:
+=====
+
+sql> DROP PACKAGE testpack ;		-->> header + Body is dropped.
+
+sql> DROP PACKAGE BODY testpack ;	-->> only body is dropped.
+
+** Header alone can't be dropped.
+
+====================================
+
+

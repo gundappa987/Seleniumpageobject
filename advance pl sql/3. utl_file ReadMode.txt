@@ -1,0 +1,204 @@
+
+--from SYSTEM
+
+create or replace directory test_dir as 'c:\TEST'
+/
+
+grant all on test_dir to scott
+/
+
+
+===========================================
+--scott
+
+-- reading only one line from a file
+
+DECLARE
+	vstr 		VARCHAR2(2000);
+	vf		UTL_FILE.FILE_TYPE;
+BEGIN
+
+ vf  := UTL_FILE.FOPEN('TEST_DIR','names.txt','R');
+
+ 	UTL_FILE.GET_LINE(vf , vstr);
+ 	dbms_output.put_line(vstr);
+
+
+ UTL_FILE.FCLOSE(vf);
+
+END;
+/
+=============================================
+
+
+--scott
+
+-- reading all the lines from a file
+
+DECLARE
+	vstr 		VARCHAR2(2000);
+	vf		UTL_FILE.FILE_TYPE;
+BEGIN
+
+ vf  := UTL_FILE.FOPEN('TEST_DIR','names.txt','R');
+
+ loop
+	begin
+ 		UTL_FILE.GET_LINE(vf , vstr);
+ 		dbms_output.put_line(vstr);
+	exception
+		when no_data_found then
+			exit;
+	end;
+ end loop;
+
+ UTL_FILE.FCLOSE(vf);
+
+END;
+/
+
+
+=============================================
+
+NOTE:
+
+The end of the file can be determined by using NO_DATA_FOUND exception..
+
+=============================================
+
+Assignment
+==========
+Consider a file called "enames.txt"
+
+scott
+blake
+miller
+ford
+P1234
+John2
+miller
+adamsssssss
+
+
+Consider a table ADMIN_DATA
+
+-------------------------
+Admin_Name	Dt_crt
+-------------------------
+scott		08-OCT-18
+blake		08-OCT-18
+..
+..
+
+
+
+
+Write a SP That copies all the names from "enames.txt" to table called "ADMINS_DATA" with following validations.
+
+a) The names starting with S shouldn't be inserted
+b) Duplicate names shouldn't inserted
+c) The names with more than 10 characters shouldn't inserted.
+d) The names with a number in it shouldn't inserted. (REGULAR EXPRESSION, regexp_like)
+
+  create or replacce procedure ADMINS_DATA
+  ( V1 IN NUMBER,
+    V2 IN NUMBER
+  )
+IS
+  VF1 UTL_FILE.FILE_TYPE;
+  VF2 UTL_FILE.FILE_TYPE;
+  vstr varchar(3000);
+  begin
+vf1:= utl_file.fopen('test_dir', V1, 'R;);
+vf2:= utl_file.fopen ('test_dir', V2, 'w');
+
+
+===============================================================================================
+
+--SP to copy the contents of file 1 to file 2
+
+
+create or replace procedure COPY_FILE
+(
+	pf1  in varchar,
+	pf2  in varchar
+)
+is
+	vf1  UTL_FILE.FILE_TYPE;
+	vf2  UTL_FILE.FILE_TYPE;
+	vstr varchar(200);
+BEGIN
+
+ vf1  := UTL_FILE.FOPEN('TEST_DIR', pf1, 'R');
+ vf2  := UTL_FILE.FOPEN('TEST_DIR', pf2, 'W');
+
+ loop
+	begin
+	 UTL_FILE.GET_LINE(vf1 , vstr);
+	 UTL_FILE.put_LINE(vf2 , vstr);
+	exception
+		when no_data_found then
+			exit;
+	end;
+  end loop;
+
+ UTL_FILE.FCLOSE(vf1);
+ UTL_FILE.FCLOSE(vf2);
+
+END;
+/
+
+sql> exec copy_file('c:\test\f1.txt', 'c:\test\f2.txt');
+
+
+============================================================================
+Assignments:
+
+- modify above program to copy only lines having "ERROR" keyword.
+
+============================================================================
+
+
+- modify above program to copy only lines having "ERROR" keyword.
+
+create or replace procedure copy_file
+(
+	pf1  in varchar,
+	pf2  in varchar
+)
+is
+   vstr varchar(20);
+   vf1 utl_file.file_type;
+   vf2 utl_file.file_type;
+BEGIN
+ vf1  := UTL_FILE.FOPEN('TEST_DIR', pf1, 'R');
+ vf2  := UTL_FILE.FOPEN('TEST_DIR', pf2, 'W');
+ loop
+	begin
+		 UTL_FILE.GET_LINE(vf1 , vstr);
+		 if vstr like '%ERROR%' then     -- if instr(vstr,'ERROR'1,1,) > 0
+			 UTL_FILE.put_LINE(vf2 , vstr);
+		 end if;
+	exception
+		when no_data_found then
+			exit;
+	end;
+ end loop;
+ UTL_FILE.FCLOSE(vf1);
+ UTL_FILE.FCLOSE(vf2);
+END;
+/
+
+
+sql> exec copy_file('c:\test\names.txt', 'c:\test\err.txt');
+
+
+
+
+
+
+
+
+
+
+

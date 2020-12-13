@@ -1,0 +1,50 @@
+
+a) Compound Triggers  (11g feature)
+===================================
+
+- It contains more than one triggers
+- Can contain only for DML statements (DML Triggers/ Instead of Triggers)
+
+Advantage:
+- It avoids having separate triggers
+
+
+Disadvantage:
+- We can't individually DISABLE/ENABLE triggers in a compound trigger
+
+
+===========================================================
+CREATE OR REPLACE TRIGGER [TRIGGER NAME]
+FOR [DML event] OR [DML EVENT] ON [TABLE NAME]
+COMPOUND TRIGGER
+-- Declarations
+-- Optional section
+	BEFORE STATEMENT IS
+	begin
+	.....
+	.....
+	end;
+
+	AFTER STATEMENT IS
+	begin
+	.....
+	.....
+	end;
+
+	BEFORE EACH ROW IS
+	begin
+	.....
+	.....
+	end;
+
+	AFTER EACH ROW IS
+	.....
+	.....
+	END;
+
+	INSTEAD OF EACH ROW IS
+	.....
+	.....
+	end;
+END;
+=====================================================================

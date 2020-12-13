@@ -1,0 +1,20 @@
+f_emp.txt
+=========	
+7788,scott,20,5000
+7839,blake,10,4000
+..
+..
+
+
+f_dept.txt
+==========
+10,accounts
+20,research
+..
+..
+	
+write a query to display ename & dname from these files.	
+
+
+===============================================================================
+

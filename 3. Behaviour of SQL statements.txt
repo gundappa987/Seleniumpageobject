@@ -1,0 +1,156 @@
+
+======================================================
+Behaviour of SQL statements within a PLSQL program
+======================================================
+
+1) If a select stmt. fails to fetch data within a PLSQL program then we get a error
+"ORA-01403: no data found"  [NO_DATA_FOUND exception] 
+
+2) IF a select stmt. returns more than ONE record, then we get below error
+"ORA-01422: exact fetch returns more than requested number of rows"[TOO_MANY_ROWS]
+
+3) If there is a Datatype or Size mismatch, then we get below error
+"ORA-06502: PL/SQL: numeric or value error:"  [VALUE_ERROR]
+================================================================
+declare
+   vjob varchar(20) := '&job';
+   vnm  varchar(2);
+begin
+  select	ename
+  INTO		vnm
+  from		emp
+  where		job = vjob;
+  dbms_output.put_line(vnm);
+end;
+/
+================================================================
+1) QA
+2) CLERK
+3) PRESIDENT
+================================================================
+
+(4) We can't use the DDL & DCL statements within PLSQL directly.
+    We have to use Native Dynamic SQL statement [EXECUTE IMMEDIATE] for the same.
+
+begin
+  execute immediate 'truncate table TEST';
+end;
+/
+
+
+(5) Usage of any aggregate functions will not throw NO_DATA_FOUND error, if the statement is failed. 
+Aggregate functions : MAX, MIN, AVG, SUM, COUNT.
+For COUNT it returns 0, rest it will return NULL.
+
+declare
+   vjob varchar(20) := 'QA';
+   vcnt number;
+begin
+  select	count(sal)
+  INTO		vcnt
+  from		emp
+  where		job = vjob;
+  dbms_output.put_line("SQL%ROWCOUNT");
+end;
+/
+
+(6) Even though DML statements fail, they will not throw "NO_DATA_FOUND" error.
+But we can check the status (whether Success/Failure) using an implicit cursor attribute called "SQL%ROWCOUNT".
+---------------------------------------
+
+begin
+
+ update emp set sal=2000 where deptno=0;
+
+ if (SQL%ROWCOUNT) = 0 then
+	dbms_output.put_line('No rows affected');
+ else
+	dbms_output.put_line('Success-'||sql%rowcount);
+ end if;
+
+end;
+/
+-----------
+sql%rowcount -> implicit cursor attribute, helps to get the number of records affected by previous SQL (DML) statement.
+
+==================================================================================
+
+NESTED BLOCKS
+=============
+- Block within a block
+
+
+Example 1
+---------
+begin
+  dbms_output.put_line('test');
+  begin
+     dbms_output.put_line('test111');
+  end;
+end;
+/
+
+
+Example 2
+---------
+
+declare
+ vnum pls_integer := 99;
+begin
+
+  declare
+     vtemp pls_integer := 100;
+  begin
+     dbms_output.put_line(vtemp);
+     dbms_output.put_line(vnum);
+  end;
+
+  dbms_output.put_line(vnum);  -- 99
+
+  dbms_output.put_line(vtemp); -- error, can't be accessed, private to inner block
+
+end;
+/
+
+** outer block variables can be accessed inside inner block 
+   whereas inner block variables cannot be accessed inside outer block.
+
+
+
+NAMED PL/SQL BLocks 
+===================
+- Named PLSQL blocks are similar to anonymous PLSQL blocks. 
+- But they will be given with a name.
+
+
+Example 1
+=========
+<<test>>
+begin
+ dbms_output.put_line('hi');
+end;
+/
+
+
+Example 2
+=========
+<<outer>>
+declare
+ var number := 90;
+begin
+
+  dbms_output.put_line(var); -- 90
+
+  <<inner>>
+  declare
+     var number := 20;
+  begin
+     dbms_output.put_line(var);  -- 20
+     dbms_output.put_line(outer.var);   -- 90
+  end;
+
+  dbms_output.put_line(inner.var);   -- error
+
+
+end;
+/

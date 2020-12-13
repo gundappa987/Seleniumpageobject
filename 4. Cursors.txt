@@ -1,0 +1,738 @@
+
+			=======
+			CURSORS
+			=======
+
+======
+Cursor : A cursor is a memory object where SQL statement is executed.
+======
+- Whenever we run a SQL statement, a cursor is created automatically.
+- Cursor is like pointer to the active record set.
+- Cursor is also called as SQL Processing area.
+- Used for handling more than 1 rows within PLSQL program ( avoids "TOO_MANY_ROWS" error ).
+- It is a memory object which can store more than 1 value (1 rows).
+
+
+=================== 
+Types of Cursors :-
+===================
+ 
+(a) Implicit Cursor
+		- no name of its own
+		- automatically created during execution of the sql st.
+		- DECLARED, OPEN, FETCHED, CLOSED implicitly.
+		- we don't have any control over it (oracle manages it)
+		- implicit cursor attributes (properties)
+			a) SQL%ISOPEN	: always false
+			b) SQL%FOUND	: returns TRUE if DML statement is success
+			c) SQL%NOTFOUND : returns TRUE if DML statement is failure
+			d) SQL%ROWCOUNT : returns no. of rows affected by prev DML statement.
+
+		declare
+			vt number ;
+		begin
+			delete from emp where deptno=10;
+			vt := SQL%ROWCOUNT;
+
+			if vt=0 then
+				dbms_output.put_line('no rows deleted');
+			else
+				dbms_output.put_line('some rows');
+				dbms_output.put_line(vt);
+			end if;
+		end;
+		/
+
+
+(b) Explicit Cursor
+		- it will have a name
+		- created by the users/developers
+		- helps to handle multiple records within plsql program
+		- avoids an error called "TOO_MANY_ROWS"
+		
+		Steps
+		=====
+		DECLARE : declare the SQL statement with a cursor (multiple rows)
+		OPEN 	: executes the statement,rows will be loaded from disk to cursor.
+		FETCH	: loads the current record from cursor to a variable
+		CLOSE	: de-allocates the cursor & its space.
+
+c) Ref cursor
+		- Dynamic Cursor
+		- It can store different results at different point of time
+	
+
+=============================
+Explicit Cursor Attributes :-
+=============================
+a) cur_name%ISOPEN:- 
+	TRUE if cursor is opened, else it returns FALSE.
+
+
+b) cur_name%FOUND:-
+	TRUE if the record is successfully fetched, else FALSE
+
+
+c) cur_name%NOTFOUND:-
+	FALSE if record is successfully fetched, else TRUE
+
+** b & c will be used to find the end of the cursor.
+
+
+d) cur_name%ROWCOUNT
+	Returns the no. of records fetched so far..
+
+
+
+========
+Examples
+========
+
+Ex: 1 DISPLAY ENAME, SAL FOR A GIVEN DEPTNO (Using SIMPLE LOOP) in Cursors (ONLY 2 COLUMNS)
+===========================================================================================
+DECLARE
+  CURSOR C1
+  IS
+	SELECT ENAME, SAL
+	FROM   EMP
+	WHERE  DEPTNO =  20;
+  V1 VARCHAR(20);
+  V2 NUMBER;
+BEGIN
+
+   OPEN  C1;
+
+   LOOP
+	   FETCH C1 INTO V1, V2;
+	   EXIT WHEN C1%NOTFOUND;
+	   DBMS_OUTPUT.PUT_LINE(V1||V2);
+           DBMS_OUTPUT.PUT_LINE(C1%rowcount);
+   END LOOP;
+
+   CLOSE C1;
+END;
+/
+
+
+Ex: 2 DISPLAY ENAME, SAL, JOB, COMM, HIREDATE FOR A GIVEN DEPTNO (Using SIMPLE LOOP) in Cursors
+===============================================================================================
+DECLARE
+  CURSOR cur_emp
+  IS
+	SELECT	ename,sal,job,comm,hiredate 
+		FROM emp 
+		WHERE   deptno=20; -- QUERY IS NOT EXECUTED 
+
+  VREC	  cur_emp%ROWTYPE; -- it is of a cursor type 
+
+BEGIN
+	OPEN	cur_emp; 
+	LOOP
+		FETCH	cur_emp INTO vrec;
+		EXIT WHEN cur_emp%NOTFOUND;
+	    DBMS_OUTPUT.PUT_LINE(vrec.ename||'-'||vrec.sal||'-'||vrec.hiredate||vrec.comm);
+	END LOOP;
+	CLOSE	cur_emp;
+
+	DBMS_OUTPUT.PUT_LINE(cur_emp%rowcount);  -- INVALID CURSOR error.
+END;
+/
+
+
+
+---------------------------------------------------------------------
+Note: %ROWTYPE helps to store all the columns of a cursor in a single variable.
+Note: Cursor Attributes should be accessed before closing the cursor.
+---------------------------------------------------------------------
+
+
+====================
+FOR  LOOP in Cursors
+====================
+- FOR LOOP is faster than simple loop.
+- FOR LOOP will implicitly opens the cursor, fetches and closes it.
+
+
+Ex: 3 DISPLAY ENAME, SAL FOR A GIVEN DEPTNO (Using FOR LOOP) in Cursors
+=======================================================================
+DECLARE
+  CURSOR cur_emp
+  IS
+	SELECT	ename,sal
+	FROM	emp 
+	WHERE   deptno=20;
+BEGIN
+	FOR VREC IN cur_emp     -->> cursor is opened automatically
+	LOOP	
+		DBMS_OUTPUT.PUT_LINE(VREC.ename||'-'||VREC.sal);
+		DBMS_OUTPUT.PUT_LINE(cur_emp%ROWCOUNT); -->> works
+	END LOOP; 	     -->> cursor is closed automatically
+
+ 	DBMS_OUTPUT.PUT_LINE(cur_emp%ROWCOUNT); -->> error.
+END;
+/
+
+
+"VREC" is variable of "cur_emp%rowtype", which is declared by ORACLE automatically.
+
+
+
+Ex: 4A DISPLAY the number of records as well along with the records
+==================================================================
+DECLARE
+  CURSOR cur_emp
+  IS
+	SELECT	ename,sal
+	FROM	emp 
+	WHERE   deptno=20;
+  x number;
+BEGIN
+	FOR VREC IN cur_emp     -->> cursor is opened automatically
+	LOOP	
+		DBMS_OUTPUT.PUT_LINE(VREC.ename||'-'||VREC.sal);
+		x := cur_emp%rowcount;
+	END LOOP; 	     -->> cursor is closed automatically
+	dbms_output.put_line(x);
+END;
+/
+
+
+Ex: 4B Insert all the even numbered rows to emp_bkup table from emp.
+
+====================================================================
+
+create table emp_bkup (ename varchar(10), crt_dt date)
+/
+
+
+declare
+  cursor c2
+  is
+	select empno, ename
+	from emp;
+
+begin
+	for x in c2
+	loop
+		if mod(x.empno,2) = 0 then
+			insert into emp_bkup values(x.ename, sysdate);
+		end if;
+	end loop;
+	
+end;
+/
+ 
+
+=====================
+Query within FOR Loop
+=====================
+
+Ex: 5 DISPLAY all the records from a EMP table
+==============================================
+BEGIN
+	FOR vrec IN (SELECT * FROM emp)
+	LOOP	
+		DBMS_OUTPUT.PUT_LINE(vrec.ename||vrec.sal||vrec.job||vrec.deptno);
+	END LOOP; 
+END;
+/
+
+
+NOTE: Here we can't use cursor attributes as cursor will not have a name.
+
+============================================================================
+
+
+
+=====================
+Errors in the Cursors
+=====================
+
+a) ORA-01001: invalid cursor  [INVALID_CURSOR] -- 
+"Accessing a cursor attribute before opening a cursor or after closing it.."
+
+begin
+ ..
+ close cur_emp;
+ if cur_emp%ROWCOUNT=2 then -- INVALID_CURSOR
+
+--------------------------------------------------------------------------
+b) ORA-06511: PL/SQL: cursor already open  [CURSOR_ALREADY_OPEN]
+"If we try to open a cursor which is already opened"
+
+BEGIN
+   OPEN cur_emp;
+   LOOP
+	   ..
+ 	   open cur_emp; -- raises ORA-6511 error.
+   END LOOP;
+   CLOSE cur_emp;
+END;
+------------------------------------------------------------------------
+C) ORA-01000 - "Maximum numbers opened cursors are exceeded"
+
+If the no. of opened cursors are exceeding the number set at the server level,it results in the above error.
+
+--from "system" or "sys" login
+SQL> show parameter open_cursors;
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- -----------------
+open_cursors                         integer     600
+
+solution:-
+--Increase the parameter size to a higher value (DBA).
+--close all the cursors properly (DEVELOPER).
+
+------------------------------------------------------------------------
+
+d) Fetch Out of sequence Error 
+
+This error will occur when we try to access a value after all the records have been fetched from a cursor.
+
+
+------------------------------------------------------------------------
+
+
+=====================
+Parameterized cursor:
+=====================
+- Parameterized cursor can take parameters (arguments)
+- If we don't know the value at the time of declaring the cursor, but we will come to know at the time of opening it, 
+then we should go for parameterized cursor.
+- It provides re-usability.
+- Same cursor can be re-used without re-writing it multiple times.
+
+
+Ex: 6 Write a program to display all the enames for PRESIDENT if the input=1, CLERK if the input=2
+==================================================================================================
+a) For a given choice, display all employee names. 
+(if the choice=1 then "President", choice=2 then "clerk")
+
+declare
+ vf 	number := &choice;
+ vjob 	varchar(20);
+ cursor emp_cur(pjob varchar)  --> Parameterized cursor.
+ is
+	 select ename,sal
+	 from   emp
+	 where  job = pjob;
+begin
+   if vf=1 then
+	vjob := 'PRESIDENT';
+   elsif vf=2 then
+	vjob := 'CLERK';
+   elsif vf=3 then
+	vjob:='SALESMAN';
+   end if;
+
+   for vrec in emp_cur(vjob) --     OPEN emp_cur(vjob);
+   loop
+	dbms_output.put_line(vrec.ename);
+   end loop;
+end;
+/
+
+
+
+Note:
+=====
+Same cursor can be opened for different values as shown below, without writing multiple cursors.
+
+declare
+vf varchar(20);
+ cursor emp_cur(pjob varchar)  --> Parameterized cursor.
+ is
+	 select ename
+	 from   emp
+	 where  job = pjob;
+vf varchar(20);
+begin
+
+  open emp_cur('CLERK');
+ loop
+fetch emp_cur('CLERK') INTO VF;
+ exit when emp_cur%notfound;
+ dbms_output.put_line(emp_cur.ename);
+  CLOSE emp_cur;
+
+  open emp_cur('SALESMAN');
+  loop
+ exit when emp_cur%notfound;
+ dbms_output.put_line(emp_cur.ename);
+  CLOSE emp_cur;
+end loop;
+end loop;
+end;
+/;
+declare
+ cursor emp_cur(pjob varchar)  --> Parameterized cursor.
+ is
+	 select ename
+	 from   emp
+	 where  job = pjob;
+begin
+
+  open emp_cur('CLERK');
+ loop
+ exit when emp_cur%notfound;
+ dbms_output.put_line(emp_cur.ename);
+  CLOSE emp_cur;
+
+  open emp_cur('SALESMAN');
+  loop
+ exit when emp_cur%notfound;
+ dbms_output.put_line(emp_cur.ename);
+  CLOSE emp_cur;
+end loop;
+end loop;
+end;
+/
+
+
+
+============================================
+LOCKING THE CURSORS FROM UN-WANTED UPDATES
+============================================
+- We can use "FOR UPDATE OF" clause to prevent any updates from different users.
+- "FOR UPDATE OF" will lock rows in the cursor
+- Once our updates are completed then we can use COMMIT/ROLLBACK to release the lock
+- We can also use "WHERE CURRENT OF" clause to update by row-by-row if Primary key is not selected 
+in a cursor.
+- If we use WHERE CURRENT OF then FOR UPDATE is also mandatory.
+- NOWAIT will provide a message about the lock.
+
+
+
+DECLARE
+  cursor c1
+  is
+   select ename, sal from emp where deptno=20 FOR UPDATE NOWAIT;
+		 --locks the data inside this cursor.
+BEGIN
+  ..
+  ..
+
+  commit;  -- lock is released here. 
+  ..
+  ..
+END;
+/
+
+
+-----------------------------------------------------------
+
+DECLARE
+  cursor c1
+  is
+	select ename, sal from emps  for update nowait;
+BEGIN
+	update emps
+		set sal =sal + 0.2*sal
+		where job='MANAGER';
+
+END;
+/
+
+
+
+
+
+================================================================
+
+
+Assignments
+===========
+
+a) program to display jobs for a given deptno.
+  DECLRAE
+CURSOR C3
+IS 
+SELECT JOB FROM EMP WHERE DEPTNO=20;
+BEGIN
+FOR I IN C3
+LOOP 
+DBMS_OUTPUT.PUT_LINE(I.JOB);
+END LOOP;
+END;
+/
+
+b) Program to print ename & dname for a given job.
+  DECLARE 
+VJOB VARCHAR(20):='&JOB';
+CURSOR C4
+IS
+SELECT A.ENAME, B.DNAME FROM EMP A, DEPT B WHERE A.DEPTNO=B.DEPTNO AND JOB=VJOB;
+ BEGIN
+FOR I IN C4
+LOOP
+DBMS_OUTPUT.PUT_LINE(I.ENAME||'-'||I.DNAME);
+END LOOP;
+END;
+/
+
+
+c) program to copy the data from emp table to emp10, emp20, emp30 tables. 
+
+create table emp10 as select * from emp where 1=2;
+create table emp20 as select * from emp where 1=2;
+create table emp30 as select * from emp where 1=2;
+
+
+declare
+ cursor c1
+ is
+	select * from emp;
+begin
+   FOR VREC IN C1
+   LOOP
+	IF VREC.DEPTNO = 10 THEN
+	    INSERT INTO EMP10 
+	    VALUES (vrec.empno, vrec.ename, vrec.job, vrec.mgr, vrec.hiredate,vrec.sal,vrec.comm, vrec.deptno);
+	ELSIF VREC.DEPTNO = 20 THEN
+		INSERT INTO EMP20 VALUES (vrec.empno, vrec.ename, vrec.job, vrec.mgr, vrec.hiredate,vrec.sal,vrec.comm, vrec.deptno);
+	ELSIF VREC.DEPTNO = 30 THEN
+		INSERT INTO EMP30 VALUES (vrec.empno, vrec.ename, vrec.job, vrec.mgr, vrec.hiredate,vrec.sal,vrec.comm, vrec.deptno);
+	END IF;
+  END LOOP;
+end;
+/
+
+
+(d) program to copy the from emp10, emp20, emp30 tables to all "emp_all" tables with some validations. 
+
+Validations:-
+i) Only even numbered empnos should be copied from emp10 & emp20 tables.
+ii) Only odd numbered empnos should be copied from emp30 table.
+
+declare
+ cursor c1
+ is
+	select * from emP10;
+ cursor c2
+ is
+	select * from emP20;
+ cursor c3
+ is
+	select * from emP30;
+begin
+   FOR VREC IN C1
+   LOOP
+	IF MOD(VREC.EMPNO,2) = 0 THEN   
+		INSERT INTO EMP_ALL VALUES VREC;
+	END IF;
+   END LOOP;
+
+   FOR VREC IN C2
+   LOOP
+	IF MOD(VREC.EMPNO,2) = 0 THEN   
+		INSERT INTO EMP_ALL VALUES VREC;
+	END IF;
+   END LOOP;
+
+
+   FOR VREC IN C3
+   LOOP
+	IF MOD(VREC.EMPNO,2) = 1 THEN   
+		INSERT INTO EMP_ALL VALUES VREC;
+	END IF;
+   END LOOP;
+
+   
+
+END;
+/
+
+
+(e) Write a program to get the output in the following format 
+(SOLUTION GIVEN BELOW, PLEASE READ & UNDERSTAND)
+
+Dname:Accts
+Ename:CLARK
+Ename:KING
+Ename:MILLER
+
+Dname:Research
+Ename:SCOTT
+Ename:FORD
+
+Dname:SALES
+Ename:BLAKE
+Ename:WARD
+
+Dname:OPERATIONS
+	-
+
+declare
+	cursor cur_dept
+	is
+		select dname,deptno from dept;
+	
+	cursor cur_emp(pdno number)
+	is
+	select ename 
+	from emp 
+	where deptno=pdno;
+
+begin
+	for i in cur_dept
+	loop
+		dbms_output.put_line('DepartmentName:'||' '||i.dname);
+		for j in cur_emp(i.deptno)
+		loop
+			dbms_output.put_line('EmpName:'||' '||j.ename);
+		end loop;
+	end loop;
+end;
+/
+
+
+declare
+cursor c1
+is
+select doc_name,doc_id from doctor;
+cursor c2(pdno number)
+is
+select p_name from patient where p_doc_id=pdno;
+begin
+for i in c1
+loop
+dbms_output.put_line('Dctorname:'||i.doc_name);
+for j in c2(i.doc_id)
+loop
+dbms_output.put_line('PatinetName:'||j.P_name);
+end loop;
+end loop;
+end ;
+Dctorname: joshi
+PatinetName: vinay
+PatinetName: komal
+PatinetName: jothi
+Dctorname: savarka
+PatinetName: vijay
+Dctorname: manjula
+PatinetName: pooja
+Dctorname: bhat
+PatinetName: ramesh
+Dctorname: patil
+PatinetName: suresh
+
+PL/SQL procedure successfully completed.
+
+ 1  DECLARE
+  2  CURSOR C1
+  3  IS
+  4  SELECT SYMP_ID, SYMP_NAME FROM SYMPTOM;
+  5  CURSOR C2(PNO NUMBER)
+  6  IS
+  7  SELECT P_NAME FROM PATIENT WHERE SYMP_ID=PNO;
+  8  BEGIN
+  9  FOR I IN C1
+ 10  LOOP
+ 11  DBMS_OUTPUT.PUT_LINE('SYMPTOMNAME:'||' '||I.SYMP_NAME);
+ 12  FOR J IN C2(I.SYMP_ID)
+ 13  LOOP
+ 14  DBMS_OUTPUT.PUT_LINE('PATINETNAME:'||'  '||J.P_NAME);
+ 15  END LOOP;
+ 16  END LOOP;
+ 17* END;
+SQL> /
+SYMPTOMNAME: headache
+PATINETNAME:  vinay
+PATINETNAME:  pooja
+SYMPTOMNAME: cold
+PATINETNAME:  komal
+PATINETNAME:  jothi
+SYMPTOMNAME: fever
+PATINETNAME:  ramesh
+PATINETNAME:  suresh
+SYMPTOMNAME: cough
+SYMPTOMNAME: body pain
+PATINETNAME:  vijay
+
+PL/SQL procedure successfully completed.
+
+==============================================================
+
+(f) Write a program to get the output in the following format.
+
+Report
+======
+Country Name:India
+	State Name : Karnataka
+		City Name : BANGALORE
+		City Name : Mysore
+	State Name : ANDHRA
+		City Name : HYD
+Country Name: USA
+	..
+	..
+
+
+Required Tables
+---------------
+
+country
+======
+ct_id	ct_name
+------------------------------------------
+IND	INDIA
+AUS	AUSTRALIA
+
+..
+..
+
+STATES
+======
+ct_id	st_id	st_name
+------------------------------------------
+IND	KAR	KARNATAKA
+IND	AP	ANDHRA
+..
+..
+
+city
+====
+ct_id	st_id	city_id		city_name
+------------------------------------------
+IND	KAR	BAN		BANGALORE
+IND	KAR	MYS		MYSORE
+..
+..
+
+
+(g) Write the differences between IMPLICIT & EXPLICIT CURSORS.
+
+  IMPLICIT CURSOR                              EXPLIXIT CURSORS
+ 1) IT IS CREATED BY DURING EXECUTION    1) IT HAS NAME
+  OF SQL STEATMENT                       2) CREATED BY USER /DEVELOPER
+2) IT HAS NO NAME                        3) HELPS TO HANDLE MULTIPLE RECORD WITHIN PLSQL PROGRAM
+ 3) IT  DECLARE , OPEN ,FETCH, CLOSE      4) AVOID AN ERROR CALLED 'TOO_many_tows'
+ IMPLICITLY 
+4) WE DONOT HAVE ANY CONTROL              
+5) SQL%ISOPEN :ALWAYS FALSE;
+6) SQL%FOUND : TERUTN THE TRUE IF DMS
+STATEMENT IS SUCCESS
+7) SQL%NOTFOUND: RETURN TRUE IF DMS STATEMENT FAILARE
+8) SQL%ROWCOUNT: RETURN NO. OF ROWS AFFECTED BY PREV
+  DMS SATEMENT
+(h) What are the challenges(ERRORS) faced while using Cursors ?
+   I WILL FACED CALLALENGES WHILE USING CURSORS 
+  WHEN WE WRITE A SQL QUERY I WANT NUMBER OF ROW BUT NOT GET THIS ROW THAT TIME I AM USED 
+ EXPLICITE CURSORE THEN I GOT THE TOO_MANY-ROW 
+ SO THIS EXPLICITE CURSOR IS AVOID TOO_MANY_ROW ERROR
+
+    
+   
+==============================================================
+
+
+
+
+
+
+
+
+
+
+
+

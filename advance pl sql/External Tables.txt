@@ -1,0 +1,148 @@
+External Tables
+===============
+
+-It is a special table which points to a file.
+-It doesn't store the data.
+-It just points to a file.
+-Whenever we query the data from an external table, it will be queried from a file.
+-It has better performance because it will not physically load the data.
+-External table is read-only table (we can't perform any DML on it)
+-We can't create index on External table (because it doesn't store the data)
+
+
+Advantages of external tables:
+==============================
+- Memory is not consumed as data is not stored in the table.
+- Helps to join a table & file from the database.
+- Helps to join a file & file from the database.
+- Faster than SQLLDR as data is not loaded physically
+
+Differences
+===========
+SQLLDR					EXTERNAL TABLES
+========================================================================
+a.loads data				-does not load the data
+b.slower				-faster
+c.file placed at client location	-server location
+e.While loading from multiple data 	-A single bad file contains all the errors 
+files a separate bad file created. 
+f.Cannot write the data into the file	-Can write into a file in .DMP (binary) format
+------------------------------------------------------------------------
+
+Step 1
+======
+--Create the directory.(SYSTEM or SYS user) 
+sql> conn / as sysdba
+SQL> CREATE OR REPLACE DIRECTORY test_dir  as 'c:/test';
+SQL> GRANT ALL ON DIRECTORY test_dir TO scott;
+=================================================================
+
+Step 2
+======
+--Data File (users.txt) stored under 'c:/test'
+7788,Jane,Janus,CLERK
+7839,Brenda,Starr,ASST
+363,JOHN,Willi,MANAGER
+364,JOESPH,BLAKE,ASST
+==================================================================
+
+Step 3
+======
+--From scott/tiger
+--Creating an external Table
+
+CREATE TABLE admins
+(employee_id NUMBER(4),    first_name   VARCHAR2(20),
+last_name    VARCHAR2(25), job	     varchar(10)
+)
+ORGANIZATION EXTERNAL
+(
+	TYPE ORACLE_LOADER
+	DEFAULT DIRECTORY TEST_DIR -->> file path (directory)
+	ACCESS PARAMETERS
+	(
+		records delimited by newline
+		fields  terminated by ','
+	)
+  	LOCATION ('custs.txt')  -->> file name
+)
+reject limit unlimited  -->> default is zero.
+/
+==================================================================
+
+Step 4
+======
+--Selecting from an external table.
+select * from admins;
+
+--Joining a table with a file
+select A.last_name, B.sal
+from admins A, emp B
+where A.employee_id = B.empno
+/
+
+
+==================================================================
+
+--Altering the external tables
+alter table admins reject limit 2;
+alter table admins reject limit unlimited;
+
+
+"reject limit" specifies the number of records can be rejected to access an external table.
+
+
+==========================================================
+
+-- Checking all external tables
+select * from user_external_tables;
+
+
+-- Checking the Oracle directories
+select * from dba_directories;   
+
+==========================================================
+
+
+
+
+-- Writing the data into a file [dmp file]
+CREATE TABLE emp_ext
+    ORGANIZATION EXTERNAL
+    (
+       TYPE ORACLE_DATAPUMP		-- Used for writing the data 
+       DEFAULT DIRECTORY test_dir
+       LOCATION ( 'emp.dmp' )
+    )
+    AS
+       SELECT *
+      FROM  emp
+/
+
+SELECT * FROM EMP_EXT ;
+
+===============================================
+
+
+Oracle Drivers:
+===============
+ORACLE_LOADER 	- Used for reading the data from the file
+ORACLE_DATAPUMP	- Used for writing the data in .DMP format [binary format]
+
+-----------------------------------------------------------------
+
+
+Real Time
+=========
+
+File ---external table----> Table (direct, just reflecting the data) 
+
+File ----SQLLDR----> Table (if it requires the data loading and some validations are required) 
+
+
+
+
+
+
+
+

@@ -1,0 +1,998 @@
+				PLSQL Basics
+				============
+
+
+What is PLSQL? Adv of PLSQL.
+- PLSQL is a procedural Language.
+- It is the procedural extension to the SQL
+- In PLSQL, we can write IF statements, LOOPS etc along-with SQL Statements.
+- PLSQL is a powerful Database programming language
+- It was first written by Oracle organization.
+
+Advantages
+==========
+- Better Performance (Better Performance than running individual SQL Statements)
+- Any complex requirements that can't be solved using SQL alone, can be solved using PLSQL.
+- We can write reusable code within PLSQL
+- We can write secured coding
+
+
+Types of PL/SQL Programs
+========================
+a) Anonymous PL/SQL Programs (Blocks)
+	- No name, doesn't return a value, not stored in DB
+	- not reusable, used for one time programming.
+
+b) Named PL/SQL Programs (Blocks)
+	- It has a name, doesn't return a value, not stored in DB
+	- not reusable, used for one time programming.
+
+c) Stored Procedure (SP)
+	- Stored in DB, may or maynot return a value.
+	- Reusable.
+
+d) Functions (User-defined Functions /UDF)
+	- Stored in DB, Should return a value.
+	- Reusable.
+
+e) Packages
+	- Contains group of SPs/Functions, improves performance
+	- Reusable.
+
+f) Triggers
+	- Stored in DB, fired for an event like DML/DDL automatically.
+ 	- Reusable.
+
+====================================================
+PLSQL Program Structure (Anonymous PLSQL Program) :-
+====================================================
+DECLARE
+c  -->declarative section
+  -->optional
+  -->declaration of variables, constants, cursors, user-defined exceptions
+BEGIN
+  -->mandatory
+  -->business logic 
+EXCEPTION
+  -->optional
+  -->error handling section
+  -->business logic for error handling
+END;
+/
+
+
+--------------------------------------------------------------
+simplest program  [mandatory sections are BEGIN & END]
+================
+begin
+ ..
+ ..
+end;
+/
+---------------------------------------------------------------
+
+First PLSQL program ..
+======================
+
+SQL> SET SERVEROUTPUT ON;   -->> to see the messages from DBMS_OUTPUT..
+
+
+Note: "dbms_output.put_line" prints the output to the screen.
+=====
+
+
+Eg 1:-
+======
+
+===================================c:\pgms\p1.txt============
+
+begin
+ dbms_output.put_line('hello world!!');
+ dbms_output.put_line('test message...........');
+end;
+/
+
+=========================================
+
+sql> @c:\pgms\p1.txt
+
+=========================================
+
+Eg 2:-
+======
+
+declare
+  vname varchar(20) := '&name' ;
+begin
+  dbms_output.put_line(vname);
+  dbms_output.put_line('My Name is ' || vname);
+end;
+
+
+
+============================================
+
+SQL> SET verify off;        --> disables the messages due to substitution [&]
+
+========================================================================================
+
+Eg 3:-
+======
+
+declare
+  vname varchar(20);
+  vage  number;
+begin
+      vname := '&name';
+      dbms_output.put_line(vname);
+      vage := &age;
+      dbms_output.put_line(vage);
+end;
+/
+
+========================================================================================
+
+========================================================================================
+
+
+=========
+Variables
+=========
+- Variable is a placeholder which can store any value.
+- Variable name should start with any alphabet, but it can contain numbers & only _ as special character.
+- Variable can change its value.
+- Variable must be declared before its usage.
+
+Eg:-
+====
+valid names
+-----------
+name1
+v_first_name
+lv_job
+TOTAL_SAL
+vsum
+
+invalid names
+-------------
+1vsal
+sum
+v first name
+v$name
+
+
+Types of variables :-
+=====================
+a) Local  Variables - By default a variable is a local variable, it can be accessed within a program only.
+b) Global Variables - It can be accessed outside of a program as well. It will be declared within a package.
+
+
+=========
+Constants
+=========
+- It is fixed variable.
+- It can't change its value.
+- It can be declared using CONSTANT keyword.
+- It has to be assigned (Initialized).
+
+Eg 4:-
+======
+
+declare
+  vname constant varchar(20) := 'scott';
+begin
+  dbms_output.put_line('The name is ' ||vname);
+  --vname := 'blake';
+end;
+/
+
+
+Differences between Variable & Constant
+=======================================
+- Constant can't change its value whereas variable can change its value.
+- Constant should be assigned whereas variable may or maynot be assigned.
+
+
+Providing NOT NULL constraint for a Variable  [NOT NULL VARIABLE]
+=================================================================
+
+Eg 5:-
+======
+declare
+  vnum  number not null := 40;
+begin
+  dbms_output.put_line(vnum);
+  vnum := 50;
+  dbms_output.put_line(vnum);
+end;
+/
+
+** If a variable is NOT NULL, then it has to be initialized; but it can change its value.
+
+
+Providing DEFAULT value for a Variable
+======================================
+
+declare
+  v1 number default 50 ;
+begin
+ dbms_output.put_line(v1);
+end;
+/
+
+** DEFAULT acts like Assignment [ := ] operator 
+
+
+--------------------------------------------------------------------------------------------------
+
+======================
+New Datatypes in PLSQL
+======================
+
+a) Boolean
+b) binary_integer		-}integer (number) datatype
+c) pls_integer			-}integer (number) datatype
+d) simple_integer (11g) 	-}integer (number) datatype
+e) exception
+F) record 
+g) object type
+h) ref cursor type
+i) collection
+
+(a) BOOLEAN - Stores TRUE or FALSE
+----------------------------------
+It can take 3 values 
+
+i)   true
+ii)  null
+iii) false
+
+Eg:-
+====
+
+declare
+ v1 boolean;
+begin
+ v1 := true;
+end;
+/
+
+
+** default value of any variable is NULL
+
+----------------------------------------------
+----------------------------------------------
+
+--Demo program to illustarte the problem of NULL
+
+declare
+  v1 number;  -- v1 number := 0;
+  v2 number;
+begin
+  v2 := v1+100;
+  dbms_output.put_line(v2); -- null.
+end;
+/
+
+
+
+Integer Datatypes
+=================
+
+Number -> Integer -> Binary_Integer -> PLS_Integer -> Simple_Integer (11g)
+
+****Question - Difference b/w PLS_INTEGER & SIMPLE_INTEGER [*****]
+simple_integer : 
+	-rounds-off to nearest place when overflow occurs, 
+	-cannot take nulls,
+	-should be initialized, 
+	-faster than pls_integer for natively compiled code, 
+	-from 11g only.
+pls_integer:
+	-error when overflow occurs, 
+	-can take nulls,
+	-need not be initialized, 
+	-slower than simple_integer, 
+	-before 11g itself.
+
+Eg:-
+====
+Declare
+ vt varchar(25000);	 -- works
+ vf char(31000);	 -- works
+ v1 simple_integer;      -- error
+ v1 simple_integer := 0; -- works
+begin
+ ..
+ ..
+end;
+/
+
+
+
+12c CHAR & VARCHAR Enchancement
+===============================
+Before 12c:
+CHAR 	- 2000 (SQL) , 32676(PLSQL)
+VARCHAR - 4000 (SQL) , 32676(PLSQL)
+
+**from 12c, at both SQL & PLSQL level we can have upto 32676 bytes (characters)
+for CHAR & VARCHAR ..
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
+
+==================
+CONTROL STATEMENTS
+==================
+a) IF   statements
+b) CASE statements
+c) GOTO Statements ->  Supported by Oracle, but not used in real time scenario.
+d) LOOPS
+	- SIMPLE LOOP
+	- FOR LOOP
+	- WHILE LOOP
+
+
+IF statements
+-------------
+a) Simple IF statement [only one condition]
+IF (condition) then
+ ..
+ ..
+END IF;
+--------------------------------------
+b) IF .. ELSE Statement [ 2 conditions]
+IF (condition) then
+ ..
+ELSE
+ ..
+END IF;
+---------------------------------------
+c) IF ELSIF ELSE Statement [ more than 2 conditions ]
+IF (condition1) then
+ ..
+ELSIF (condition2) then
+ ..
+ELSIF (condition3) then
+ ..
+ELSE
+ ..
+END IF;
+---------------------------------------
+D) Nested IF statements
+IF (condition1) THEN
+ ..
+ IF (condition2) THEN
+  ..
+ ELSE
+  ..
+ END IF;
+
+ELSE
+ ..
+END IF;
+------------------------------------------
+
+EXAMPLES
+========
+
+-- PROGRAM TO CHECK HIGHEST AMONG 2 NUMBERS..
+
+declare
+ veno1 number := &no1;
+ veno2 number := &no2;
+begin
+  IF (VENO1 > VENO2) THEN
+	dbms_output.put_line(VENO1);
+  elsif (VENO1 < VENO2) THEN
+	dbms_output.put_line(VENO2);	
+  else
+	dbms_output.put_line('same');	
+  end if;
+end;
+/
+
+=========================================================
+
+-- PROGRAM TO CHECK WHETHER A NUMBER IS ODD OR EVEN..
+declare
+  veno number := &no;
+begin
+  if mod(veno,2) = 0 then
+	dbms_output.put_line('even');
+  else
+	dbms_output.put_line('odd');	
+  end if;
+end;
+/
+
+=========================================================
+
+
+LOOPS
+=====
+
+LOOPS:Help to execute the code repeatedly.
+
+
+Types
+=====
+-SIMPLE LOOP (BASIC LOOP)
+-FOR LOOP
+-WHILE LOOP
+
+
+======================================
+SIMPLE LOOP:USED WHEN WE DON'T KNOW EXACT NUMBER OF ITERATIONS.
+======================================
+
+Eg:- Program to print numbers from 1 to 10
+-------------------------------------------
+
+declare
+ i NUMBER := 1; -- initialization
+begin
+ loop
+	DBMS_OUTPUT.PUT_LINE(i);
+	i := i+1; -- increment
+	exit when i > 10; -- exit condition
+ end loop;
+ DBMS_OUTPUT.PUT_LINE('ended');
+end;
+/
+
+
+EXIT : This statement is used to Break the loop.
+
+===============================
+FOR LOOP:USED WHEN WE KNOW EXACT NUMBER OF ITERATIONS.
+	   FASTER THAN SIMPLE LOOP.
+	   SIMPLER TO USE THAN BASIC LOOP.
+     	   IT IMPLICITLY DECLARES LOOP VARIABLE, INCREMENTS BY 1, & EXITS AFTER THE FINAL VALUE.
+	   IT IS ALSO CALLED AS NUMERICAL FOR LOOP [AS IT CAN BE USED ONLY INTEGERS]
+===============================
+
+Eg:- Program to print numbers from 1 to 10
+
+
+begin
+for i in 1..10
+loop
+dbms_output.put_line(i);
+end loop;
+end;
+/
+
+
+
+
+
+
+------------------------------------------
+begin
+ for i in 1..10   
+ loop
+	DBMS_OUTPUT.PUT_LINE(i);
+ end loop;
+end;
+/
+=======================
+
+Eg:- Program to print numbers from 1 to 10, but exit at 5
+---------------------------------------------------------
+begin
+ for i in 1..10   -- for(i=0;i<=10;i++)
+ loop
+   dbms_output.put_line(i);
+   if i = 5 then
+	exit;
+   end if;
+ end loop;
+end;
+/
+
+=========================================
+
+SCENARIOS OF A FOR LOOP
+=======================
+
+a) Loop variable need not be declared, implicitly declared by FOR loop
+----------------------------------------------------------------------
+
+begin
+ for i in 1..10   
+ LOOP
+	DBMS_OUTPUT.PUT_LINE(i);
+ end loop; -- undeclared here
+
+ DBMS_OUTPUT.PUT_LINE(i); -- error, "i" can't accessed outside of END LOOP.
+
+end;
+/
+
+
+--------------------------------------
+Accessing a value outside of the loop.
+--------------------------------------
+declare
+ j number;
+begin
+ for i in 1..10   
+ LOOP
+	DBMS_OUTPUT.PUT_LINE(i);
+	j := i;
+ end loop; -- undeclared here
+ DBMS_OUTPUT.PUT_LINE(j); 
+end;
+/
+
+
+
+
+--Named PLSQL Program or Block
+
+<<test>>
+declare1
+ i number := 10000;
+begin
+   for i in 1..10
+   loop
+           dbms_output.put_line(i);      -->>1,2,3,4,5....
+           dbms_output.put_line(test.i); -->> 10000
+   end loop;
+   dbms_output.put_line(i);  -->> 10000
+end;
+/
+
+
+
+b) We can't change the increment. (by default it is +1).
+--------------------------------------------------------
+begin
+ for i in 1..10
+ LOOP
+	DBMS_OUTPUT.PUT_LINE(i);
+ 	i := i+2; -- error.
+ end loop;
+end;
+/
+
+c) We can print the values in REVERSE order
+===========================================
+
+begin
+ for i in REVERSE 1..10
+ LOOP
+	DBMS_OUTPUT.PUT_LINE(i);
+ end loop;
+end;
+/
+
+
+=============================
+d) Initial Value should always be lesser than or equal to final value
+
+	FOR i IN 1..1
+	  --executes one time only
+	END LOOP;
+	-------------------
+	FOR i IN 1..5
+	  --executes 5 times
+	END LOOP;
+	----------------
+	FOR i IN 2..1
+	  --No error. But, executes zero times.
+	END LOOP;
+	-------------------
+	FOR i IN 5..5
+	  --executes 1 times
+	END LOOP;
+	----------------
+===================================================================
+
+Nested Loops
+============
+-For each and every value of OUTER LOOP, the inner LOOP will be executed (like JOIN).
+-similar to cartesian product.
+
+begin
+
+ for i in 1..5
+
+ loop
+	dbms_output.put_line('hello');
+	for j in 1..2
+	loop
+		dbms_output.put_line('hi');
+	end loop;	
+ end loop;
+end;
+/
+============================================
+
+
+loop labels
+-----------
+
+Loop labels are the names for the loops.
+
+They help to control the exit of the loops accordingly.
+
+When we use EXIT in OUTER loop, then both inner & outer loops will be exited.
+
+When we use EXIT in INNER loop, only inner loop will be exited.
+
+But, if we want to exit the outer loop from an inner loop, make use of loop labels.
+
+
+--
+begin
+ <<OUTER>>
+ for i in 1..5
+ loop
+
+   dbms_output.put_line('hello');
+
+   <<INNER>>
+   for j in 1..2
+   loop
+	dbms_output.put_line('HI');
+   	EXIT outer; 
+   end loop; 
+ end loop;
+end;
+/
+--
+
+
+=============================================================
+
+
+"CONTINUE" statement in Loops (Oracle 11g)
+==========================================
+
+- CONTINUE can be used only from Oracle 11g.
+- It simply takes the control to the start of the loop, it will skip the code below.
+
+
+-- Print hello from 1 to 10 except 5th iteration
+begin
+   for i in 1..10
+   loop
+           dbms_output.put_line('hi-'||i);
+		
+	   if (i = 5) then
+		continue; -- goes the to first line of loop, starts from next iteration.
+	   end if;
+
+           dbms_output.put_line('hello');
+
+   end loop;
+end;
+/
+
+======
+
+-- Print all the numbers from 1 to 100 except divisible by 9 and 6
+begin
+   for i in 1..100
+   loop
+
+	continue when mod(i,9) = 0 or mod(i,6) = 0 ;
+
+	dbms_output.put_line(i);
+
+   end loop;
+end;
+/
+
+
+
+===============================
+while loop
+===============================
+
+-- Print the numbers from 1 to 10 using WHILE loop
+
+declare
+  i number := 1;
+begin
+  while (i <= 10)
+  loop
+    dbms_output.put_line(i);
+    i := i+1;
+  end loop; 
+end;
+/
+
+
+==========================================================================
+
+Assignments
+===========
+
+a. Write a program to calculate simple interest by accepting p,t,r from user.
+SQL> show error
+No errors.
+ declare
+   p number;
+   r number;
+   t number;
+   v number;
+   begin
+   p:= &principle;
+   r:= &rate;
+   t:= &time;
+ 
+   v:= p*r*t/100;
+   dbms_output.put_line (v);
+   end;
+  /
+ output =Enter value for principle: 3000
+old   7: p:= &principle;
+new   7: p:= 3000;
+Enter value for rate: 15
+old   8: r:= &rate;
+new   8: r:= 15;
+Enter value for time: 5
+old   9: t:= &time;
+new   9: t:= 5;
+2250
+
+PL/SQL procedure successfully completed.
+
+b. write a Program to add 2 numbers.
+[Output : The sum of 10 and 90 is 100.]
+ SQL> declare
+     vnum number := '&num';
+     vnum1 number := '&num1';
+     v number;
+     begin
+     v:= vnum+ vnum1;
+     dbms_output.put_line (v);
+     end;
+    /
+Enter value for num: 10
+old   2:  vnum number := '&num';
+new   2:  vnum number := '10';
+Enter value for num1: 90
+old   3:  vnum1 number := '&num1';
+new   3:  vnum1 number := '90';
+100
+
+PL/SQL procedure successfully completed.
+c. Differences between SQL & PLSQL (4 differences)
+                  SQL                                    PLSQL
+  1) IT IS STRACTURE QUERY LAUNAGAGE                1) IT IS PROCEDURE LAUNGAGE
+  2) IT IS COMUNICATE TO DATABASE                  2) IT POWERFUL PROGRAMING LAUNGAGE AND EXTENSION TO THE SQL 
+  3) it is command based language                  3) it is a powrfull programming laungage 
+
+
+
+
+d. How PLSQL is faster than SQL ?
+   sql is strictutre query language 
+   it is command based language
+   pls sql prosedure language is reusable coding that why is faster than sql;
+  
+e. Difference between PLS_INTEGER & BINARY_INTEGER?
+
+
+Assignments (IF Statements)
+===========================
+(1) Accept a year in 4 digit format and print whether it is leap year or not.
+  declare
+  v number := '&year' ;
+ begin
+ if mod(v, 4)=0 then
+ dbms_output.put_line('leap year');
+ ELSE 
+ dbms_output.put_line( 'not leap year');
+end if;
+end;
+/
+
+   
+(2) Accept a number and print whethet it is odd or even.
+   
+      declare
+     v number:= '&v';
+    begin
+     if mod(v, 2) = 0 THEN
+     DBMS_OUTPUT.PUT_LINE('EVEN');
+   ELSE
+   DBMS_OUTPUT.PUT_LINE('odd');
+    END IF;
+   END;
+SQL> /
+Enter value for v: 11
+old   2:   v number:= '&v';
+new   2:   v number:= '11';
+odd
+
+(3) Accept a salary of a person; print LOW if it is < 2000, print MEDIUM if it is < 4000, else print HIGH.
+  declare
+ psal number:= '&psal';
+ begin
+if (psal<2000) then
+dbms_output.put_line( 'low');
+elsif (psal<4000) then
+dbms_output.put_line('medium');
+else
+dbms_output.put_line('high');
+end if;
+end;
+/
+
+
+
+Assignments (LOOPS)
+===================
+- Difference b/w simple & FOR loop. (5 differences)
+  simple loop : when we not know exact number of itreation 
+              : it is increment by number of values 
+ for loop : when we know exact number of itreation
+          : it default incerement is one values
+          : it is faster than simple loop as it is implicitily decleare the variable
+          : exit after final values
+
+- Difference between EXIT and CONTINUE statement
+  exit :it is stop the itreation 
+  continue: it is continue it is skip the code
+
+
+- Write a program to print the sum of all the number between 1 to 50	    (Use FOR Loop)
+ declare 
+vsum number := 0;
+begin
+ for i in 1..50
+loop
+vsum:= vsum+i;
+end loop ;
+dbms_output.put_line(vsum);
+end;
+/
+
+- Write a program to print the sum of all the even numbers between 1 to 100 (Use FOR Loop)
+  declare
+ vsum number :=0;
+ begin
+ for i in 1..100
+ loop 
+if mod(i,2)=1 THEN
+vsum:= vsum+i;
+end if ;
+end loop;
+dbms_output.put_line(vsum);
+end;
+/
+
+or (simple loop)
+ declare
+i number := 2;
+vsum number:= 0;
+begin
+loop
+vsum:= vsum + i;
+i:= i+2;
+exit when i >100;
+end loop;
+dbms_output.put_line(vsum);
+end;
+/
+
+- Write a program for Factorial of a number (Use FOR LooP)
+ declare
+ i number;
+ f number:= 1;
+num number:=&n;
+begin
+for i in 1..num
+loop
+f:= f*i;
+dbms_output.put_line(f);
+end loop;
+end;
+/
+
+or (while loop)
+   SQL> declare
+  2  i number := 1;
+  3  f number := 1;
+  4  num number := &n;
+  5  begin
+  6  while (i<=num)
+  7  loop
+  8  f:= f*i;
+  9  i:= i+1;
+ 10  dbms_output.put_line(f);
+ 11  end loop;
+ 12  end;
+ 13  /
+- Write a program for Fibonacci Series Eg:- 0 1 1 2 3 5 8 13 21 34 55 ..    (Use FOR Loop)
+declare
+ i number;
+n number:= '&n';
+f number := 0;
+s number := 1;
+a number ;
+begin
+dbms_output.put_line(f);
+dbms_output.put_line(s);
+for i in 3..n
+loop
+a:= f+s
+dbms_output.put_line(a);
+f:= s;
+s:= a;
+end loop;
+end;
+/
+
+
+- Write a program for For a given string, count the number of vowels in it.  (Use FOR Loop)
+  Clue :- (FOR i in 1..length(vstr))
+  clue :- vt := substr(vstr,i,1)
+
+ DECLARE
+    v VARCHAR2(400) := 'ITHATHAS ADDUKLA';
+   noofvowels NUMBER := 0;
+    noofconsonants NUMBER := 0;
+    C CHAR;
+    BEGIN
+    FOR i IN 1..Length(v) LOOP
+    c := Substr(v, i, 1);
+    IF c IN ( 'A', 'E', 'I', 'O', 'U' )
+   OR c IN ( 'a', 'e', 'i', 'o', 'u' ) THEN
+   noofvowels := noofvowels + 1;
+   ELSE
+   IF c NOT IN ( ' ' ) THEN
+   noofconsonants := noofconsonants + 1;
+   END IF;
+   END IF;
+   END LOOP;
+   dbms_output.Put_line('No. of Vowels: '
+   || noofvowels);
+   dbms_output.Put_line('No. of Consonants: '
+  || noofconsonants);
+ END; 
+No. of Vowels: 6
+No. of Consonants: 9
+
+
+
+- Write a program to Reverse a string without using REVERSE function (Use FOR Loop)
+  clue :- vt := substr(vstr,-i,1)
+ 1  DECLARE
+  2  STR VARCHAR(20):='&STR';
+  3  LEN NUMBER;
+  4  STR1 VARCHAR(20);
+  5  BEGIN
+  6  LEN:=LENGTH(STR);
+  7  FOR I IN 1..LEN
+  8  LOOP
+  9  STR1:=STR1|| SUBSTR(STR,-I,1);
+ 10  END LOOP;
+ 11  DBMS_OUTPUT.PUT_LINE(STR1);
+ 12* END;
+SQL> /
+Enter value for str: GUNDAPPA
+old   2: STR VARCHAR(20):='&STR';
+new   2: STR VARCHAR(20):='GUNDAPPA';
+APPADNUG
+
+- Write a program to check whether a given number is prime or not (Use FOR Loop)
+ declare 
+no number:=&no;
+n
+
+- Generate a picture shown below (using Nested FOR LOOPS).
+*
+* *
+* * *
+* * * *
+
+
+====================================================================================================================================================
+https://www.geeksforgeeks.org/no-of-vowels-and-consonants-in-a-given-string-in-pl-sql/

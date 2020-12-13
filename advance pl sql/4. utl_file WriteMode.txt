@@ -1,0 +1,218 @@
+utl_file
+========
+	- It is an Oracle supplied package which helps to perform
+	  file operations [both input and output].
+
+Advantages
+==========
+	- Helps to write into the file in a text format [ apart from reading ]
+	- Helps to read/write the files within PLSQL code like SP, function etc..
+	- helps for generating plsql reports and the same is stored in a file
+steps
+=====
+	- open the file for a particular mode  [read/write/append] [r/w/a]
+	- perform the operation
+	- close the file
+
+** file should be present at the server location like sp, function etc..
+
+=====================================================================
+
+sql> sho user
+<scott>
+
+sql> conn / as sysdba
+
+sql> show user
+<sys>
+
+--> SYS or SYSTEM user (DBA)
+sql> CREATE or replace DIRECTORY test_dir AS 'c:\test' ;
+
+
+sql> GRANT all on directory test_dir to scott ;
+
+
+sql> conn scott/tiger
+
+
+------------example for write mode-------------------
+------------from scott-------------------------------
+
+--Example 1
+--Write a program to write a sample text in a file
+
+DECLARE
+  vf  	UTL_FILE.FILE_TYPE;  -- file pointer variable ..
+BEGIN
+
+  vf := UTL_FILE.FOPEN('TEST_DIR', 'admins.txt', 'w');
+
+  UTL_FILE.PUT_LINE(vf,  'hello....');
+
+  UTL_FILE.FCLOSE(vf);
+
+END;
+/
+
+  UTL_FILE.PUT_LINE -- procedure that writes into a new line
+  UTL_FILE.PUT      -- procedure that writes in a same line
+
+------------------------------------------------------------------
+
+--Example 2
+--Write a procedure to write employee name into a file
+
+create or replace procedure write_name
+(
+  peno in number
+)
+is 
+   vf  		UTL_FILE.FILE_TYPE;  -- file pointer variable ..
+   vname	varchar(20);
+   vsal  	number;
+BEGIN
+  select ename,sal
+  into   vname,vsal
+  from	 emp
+  where  empno = peno;
+  vf := UTL_FILE.FOPEN('TEST_DIR', 'admins.txt', 'a');
+  UTL_FILE.PUT_LINE(vf,  vname||','||vsal  );
+  UTL_FILE.FCLOSE(vf);
+END;
+/
+
+sql> exec write_name(7788); -->> open the file and check the data.
+
+-----------------------------------------------
+-- Procedure to write all the enames to file for a given deptno.
+create or replace procedure write_data
+(
+  pdno in number	
+)
+is
+	vf utl_file.file_type;
+	cursor curnames
+	is	
+		select 	ename
+		from	emp
+		where   deptno = pdno;
+
+begin
+	vf := UTL_FILE.FOPEN('TEST_DIR', 'names.txt', 'w');
+
+	for i in curnames
+	loop
+		utl_file.put_line(vf, i.ename);
+		--insert into test values(i.ename);
+	end loop;
+
+	UTL_FILE.FCLOSE(vf);
+end;
+/
+
+
+sql> exec write_data(20);
+
+
+
+-----------------------------------------------------
+- Write a SP to get all the employee names & sal for a GIVEN DEPTNO and write
+  into a file in the following format.
+
+  Name		Sal
+  -----		---
+  scott		2000
+  clark		5000
+  blake		6000
+  ford		4500
+  -------------------
+  Total Sal	17500
+  -------------------
+
+
+sql> exec write_file(20);
+
+
+==============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create OR REPLACE procedure write_file
+(pdno in number)
+is
+	cursor c1
+	is
+		select ename, sal
+		from emp 
+		where deptno=pdno;
+	VF	UTL_FILE.FILE_TYPE;
+	vsal	number;
+begin
+
+	vf := utl_file.fopen('TEST_DIR','NAMES.TXT','W');
+
+	-- Writing deptwise salaries.
+	UTL_FILE.PUT_LINE(VF , 'NAME             SAL');
+	UTL_FILE.PUT_LINE(VF , '--------------------');
+	FOR VREC IN C1
+	LOOP
+		UTL_FILE.PUT_LINE(VF, VREC.ENAME || '         '||VREC.SAL);
+	END LOOP;
+
+	-- Writing overall total salary
+	UTL_FILE.PUT_LINE(VF , '--------------------');
+	SELECT 	SUM(SAL)
+	INTO	VSAL
+	FROM	EMP
+	WHERE 	DEPTNO = PDNO;
+	UTL_FILE.PUT_LINE(VF , 'total sal         '||vsal);	
+	UTL_FILE.PUT_LINE(VF , '--------------------');
+
+	UTL_FILE.FCLOSE(VF);
+END;
+/
+
+rpad & lpad functions
+
+
+sql> exec write_file(20);
+
+declare
+ cursor c1 
+ is 
+	select * from emp;
+ vf  UTL_FILE.FILE_TYPE;
+begin
+
+  vf := UTL_FILE.FOPEN('TEST_DIR', 'names.txt', 'a');
+  for i in c1
+  loop
+	UTL_FILE.PUT_LINE(vf, i.ename||'-'||i.sal);
+  end loop;
+
+  UTL_FILE.FCLOSE(vf);
+end;
+/
+
+
+
+
+  UTL_FILE.get_line(fileHandler);
+-----------------

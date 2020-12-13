@@ -1,0 +1,30 @@
+
+
+
+System Events
+=============
+
+BEFORE SHUTDOWN  --> for the DB server, fires just before the server is shut down
+BEFORE LOGOFF	 --> for the user/schema,fires just before the user is disconnected
+
+SERVERERROR  -->> ANY INTERNAL DATABASE ERROR 
+
+AFTER  LOGON	--> for the user/schema,fires just after the user is connected.
+AFTER  STARTUP  --> for the DB server, fires just after the server is started
+
+
+create or replace trigger test_trig1
+after logon
+begin
+   insert into logs
+	values(user, sysdate);
+end;
+/
+
+create or replace trigger test_trig2
+before logoff
+begin
+   insert into logs
+	values(user, sysdate);
+end;
+/

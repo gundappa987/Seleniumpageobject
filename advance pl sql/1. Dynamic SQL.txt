@@ -1,0 +1,236 @@
+===========
+DYNAMIC SQL
+===========
+
+- Oracle uses Static SQL Method to compile & execute the SQL Statements & PLSQL Programs.
+
+=====================================
+Types of SQL Statements
+=====================================
+a.Static SQL(default): compilation time compilation, run-time it will execute. (early binding)
+b.Dynamic SQL 	     : both compilation & execution will happen at run-time. (late binding)
+
+=====================================
+Methods for Implementing Dynamic SQL.
+=====================================
+a) Using DBMS_SQL package -> it is an in-built package to implement dynamic SQL.
+
+b) Using "EXECUTE IMMEDIATE" statement (NDS - Native Dynamic SQL)
+
+
+** EXECUTE IMMEDIATE is faster & simple to use over DBMS_SQL package.
+** EXECUTE IMMEDIATE has lesser steps over DBMS_SQL package.
+
+
+
+=========================
+Advantages of Dynamic SQL
+=========================
+1. We can execute DDL & DCL statements within PLSQL using Dynamic SQL
+
+
+Eg:-
+====
+
+create or replace procedure crt_tab
+is
+begin
+      execute immediate ' truncate table test_tab ' ;
+end;
+/
+
+create or replace procedure crt_tab
+is
+begin
+      execute immediate ' GRANT SELECT ON emp TO scott ' ;
+end;
+/
+
+
+
+
+2. Helps to compile the programs even though we don't know the table names & columns till the run time.
+
+Eg:- Function to return the number of records for a given table
+---------------------------------------------------------------
+
+create or replace function getcnt
+(p_tblname in varchar2)
+return number 
+is
+	vcnt number;
+begin
+	execute immediate 'select count(*) from '|| p_tblname into vcnt;
+	return vcnt;
+end;
+/
+
+
+
+select getcnt('emp') from dual
+/
+
+create or replace procedure getcnt1
+(p_tname in varchar2,
+ vcnt out number)
+is
+begin
+execute immediate 'select count(*) from '||p_tname into vcnt;
+end;
+testing
+
+ variable v1 number;
+exec getcnt1('dept':v1)
+print v1;
+
+
+
+
+-----------------------------------------------------------------------------------
+
+
+
+
+==========
+DBMS_SQL:-
+==========
+-It is an in-built package to implement Dynamic SQL..
+
+Steps in using the DBMS_SQL package [memorize]
+==============================================
+DBMS_SQL.open_cursor
+DBMS_SQL.PARSE
+DBMS_SQL.BIND_VARIABLE
+DBMS_SQL.EXECUTE
+DBMS_SQL.COLUMN_VALUE  (only for SELECT statement)
+DBMS_SQL.CLOSE
+
+Sample program for TRUNCATING a given table:-   [not imp.]
+---------------------------------------------
+declare
+  vtab varchar(20);
+  vf   dbms_sql.native;
+begin
+  vtab := 'EMP';  
+  DBMS_SQL.open_cursor(vf);
+  DBMS_SQL.PARSE(vf, 'truncate table :x' );
+  DBMS_SQL.BIND_VARIABLE(vf , 1, vtab);
+  DBMS_SQL.EXECUTE (vf); -- statement executes
+  DBMS_SQL.CLOSE(vf);
+end;
+/
+-------------------------------------------------------
+-------------------------------------------------------
+
+===================
+execute immediate:-
+===================
+
+--------------------execute immediate--------------------------------
+
+declare
+  vtab varchar(20);
+begin
+  vtab := '&tablename';
+  execute immediate ' truncate table ' || vtab;
+end;
+/
+
+--------------------procedure to truncate a table--------------------------
+
+create or replace procedure tr_tab
+(ptab in varchar)
+is
+begin
+ execute immediate 'truncateeeee table '||ptab;
+end;
+/
+
+---------------------------------------------------------
+sql> exec tr_tab('prod');
+---------------------------------------------------------
+
+
+------------------------------------------------------
+
+Assignment 1  (PROCEDURE TO ADD A NEW COLUMN TO A GIVEN TABLE)
+==============================================================
+
+create or replace procedure addcol
+(
+ ptab in varchar, 
+ pcol in varchar
+)
+is
+begin
+     EXECUTE IMMEDIATE 'ALTER TABLE  PROD ADD'|| Ptab;
+    EXECUTE IMMEDIATE 'ALTER TABLE  PROD ADD'|| pcol;
+end;
+/
+
+sql> exec addcol('prod', 'feedback varchar(5)' );
+
+
+Assignment 2
+============
+Write a function to accept 2 table names and return the name of the table having more number of rows.
+
+
+
+create or replace function getcnt1
+(
+p_tblname1 in varchar2,
+p_tblname2 in varchar2
+)
+return varchar 
+is
+	vcnt1 number;
+	vcnt2 number;
+
+begin
+	execute immediate 'select count(*) from '|| p_tblname1 into vcnt1;
+	execute immediate 'select count(*) from '|| p_tblname2 into vcnt2;
+ 
+        if (vcnt1 > vcnt2) then
+		return p_tblname1 ;
+	else
+		return p_tblname2;
+	end if;
+end;
+/
+
+SQL> select getcnt1 ('emp','dept') from dual ;
+
+GETCNT1('EMP','DEPT')
+------------------------------------------------------------------------------------------------------------------------
+emp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+==========

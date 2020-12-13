@@ -1,0 +1,125 @@
+
+
+
+======
+LOCKS
+======
+
+Lock helps to acquire complete rights on a TABLE/rows
+
+Types:
+
+a) Shared Lock
+	- Occurs for every SELECT statement
+	- We can have 'n' shared locks on a table
+
+b) Exclusive Lock
+	- Occurs for every DML statement automatically.
+ 	- Once an exclusive lock is acquired, then updates would be blocked
+	- More than one Exclusive Lock is allowed on a table
+	- It can be a Row Level Lock & Object Level Lock
+	- Released when COMMIT/ROLLBACK/DDL is issued
+
+--manually locking
+sql> LOCK TABLE emp IN EXCLUSIVE MODE;
+
+c) Dead Lock
+	- When 2 different sessions[users] try to modify same set of data[rows]	at same
+	  point of time, it results in a dead lock.
+	- Oracle automatically signals the Session 1 
+	  (previous session/FIRST BLOCKED SESSION ) about the deadlock and releases 
+	  the same.
+
+
+dead locks example
+==================
+
+From Session 1
+==============
+update emp set sal=9000 where deptno=10;
+
+From Session 2
+==============
+update emp set sal=4000 where deptno=20;
+
+From Session 1
+==============
+update emp set sal=5000 where deptno=20;
+ --> This session is blocked.
+
+From Session 2
+==============
+update emp set sal=6000 where deptno=10;
+  --> This will create a dead lock.
+====================================================
+ORA-00060: deadlock detected while waiting for resource
+====================================================
+
+**Oracle automatically signals the Session 1 
+(previous session/FIRST BLOCKED SESSION )about the deadlock and releases the same.
+
+======================================================
+
+
+Note:- We can use DBMS_LOCK.SLEEP(n)  or ROLLBACK / COMMIT to overcome the dead lock.
+
+
+=======================================================
+
+Note 1:
+------
+To check all the locked objects
+===============================
+sql> select * from v$locked_object;
+
+Note 2 :
+--------
+"NOWAIT" is used to inform about the locked object instead of keeping in a hung state forever.
+
+
+Note 3:
+-------
+killing a session forcefully:-
+==============================
+a) first get the session id & serial # from "v$session"
+
+select 
+SID,
+SERIAL#,
+AUDSID
+USERNAME,
+COMMAND,
+SCHEMANAME,
+TERMINAL,
+PROGRAM
+from v$session 
+where program like 'sqlpl%';
+
+
+
+b) use kill command to end a session.
+
+SQL>  alter system kill session '160,101';
+				[sid,serial#]
+
+
+
+Steps to terminate a session
+============================
+
+step1:
+open a new session with "sys" or "system" user.
+
+step2:
+find out the session to be killed from "v$session"
+
+step3:
+use " alter system kill session " command
+
+------------------------------------------------
+
+
+
+
+
+

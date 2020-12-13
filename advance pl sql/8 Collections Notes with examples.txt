@@ -1,0 +1,875 @@
+
+
+-- Prints all the enames for a given deptno using Cursor.
+
+create or replace procedure disp_name
+(
+	pdno in number
+)
+is
+   cursor c1
+   is
+	select ename, sal from emp where deptno = pdno;
+begin
+	for i in c1
+	loop
+		dbms_output.put_line(i.ename, i.sal);
+	end loop; 
+end;
+/
+
+
+sql> exec disp_name(20);
+
+=================================================================================
+
+
+-- Prints all the enames for a given deptno using collection (associative array).
+
+create or replace procedure disp_name
+(
+	pdno in number
+)
+is
+	TYPE  typ_aa IS TABLE OF VARCHAR(10) INDEX BY PLS_INTEGER;
+	vtest typ_aa;
+begin
+	select	ename
+	bulk collect into vtest
+	from	emp
+	where	deptno = pdno;
+
+
+	for i in vtest.first..vtest.last
+	loop
+		dbms_output.put_line(vtest(i));
+	end loop;
+end;
+/
+
+
+
+sql> exec disp_name(20);
+
+
+=================================================================================
+-- Prints all the enames for a given deptno using collection (NESTED TABLE).
+
+create or replace procedure disp_name
+(
+	pdno in number
+)
+is
+	TYPE  typ_aa IS TABLE OF VARCHAR(10);
+	vtest typ_aa := typ_aa();		
+
+begin
+	select	ename
+	bulk collect into vtest
+	from	emp
+	where	deptno = pdno;
+
+	for i in vtest.first..vtest.last
+	loop
+		dbms_output.put_line(vtest(i));
+	end loop;
+end;
+/
+
+
+sql> exec disp_name(20);
+
+=================================================================================
+-- Prints all the enames for a given deptno using collection (VARRAY).
+
+create or replace procedure disp_name
+(
+	pdno in number
+)
+is
+	TYPE  typ_aa IS VARRAY(20) OF VARCHAR(10);
+	vtest typ_aa := typ_aa();			-- Initialization only for NT and VARRAYS
+
+begin
+	select	ename
+	bulk collect into vtest
+	from	emp
+	where	deptno = pdno;
+
+	for i in vtest.first..vtest.last
+	loop
+		dbms_output.put_line(vtest(i));
+	end loop;
+end;
+/
+
+
+sql> exec disp_name(20);
+
+================================================================================================
+
+
+--Write a procedure to return all the enames for a given deptno..  (similar to ref cursor)
+create or replace procedure get_NAME
+(DENO IN NUMBER)
+IS
+CURSOR C1
+is
+SELECT ENAME FROM EMP WHERE DEPTNO=DENO;
+BEGIN
+FOR I IN C1
+LOOP
+DBMS_OUTPUT.PUT_LINE(I.ENAME);
+END LOOP;
+END;
+
+DECLARE
+VT VARCHAR2(20);
+BEGIN
+EXEC GET_NAME1(10,VT);
+FOR I  IN VT.FIRST..VT.LAST
+LOOP
+DBMS_OUTPUT.PUT.LINE(I.ENAME);
+END LOOP;
+END;
+/
+
+
+sql> create or replace type var_names is varray(200) of varchar(20)
+/
+
+------------------------------------------------------------
+create or replace procedure get_nms
+(
+	pdno IN	 	NUMBER,
+	pnm  OUT	      var_names
+
+)
+IS
+BEGIN
+	SELECT 			ename
+	BULK COLLECT INTO	pnm
+	FROM			emp
+	WHERE			deptno = pdno;
+END;
+/
+---------------------unit testing---------------------------------
+
+declare
+ vt var_names;
+begin
+ get_nms(20, vt);
+ for i in vt.first..vt.last
+ loop
+	dbms_output.put_line(vt(i));
+ end loop;
+end;
+/
+
+
+================================================================================================
+================================================================================================
+--Write a Function to return all the enames for a given deptno..  (similar to ref cursor)
+
+
+sql> create or replace type var_names is varray(200) of varchar(20)
+/
+
+------------------------------------------------------------
+create or replace function ret_data
+(
+	pdno IN	 	NUMBER
+)
+return var_names
+IS
+	vt var_names := var_names();
+BEGIN
+	SELECT 			ename
+	BULK COLLECT INTO	vt
+	FROM			emp
+	WHERE			deptno = pdno;
+
+	RETURN vt;
+END;
+/
+---------------------unit testing---------------------------------
+
+select ret_data(20) from dual
+/
+
+
+select * from table(ret_data(10)) --table function.. (function returning a collection can be called in "FROM")
+/
+
+================================================================================================
+================================================================================================
+
+Assignments
+===========
+A. Write a procedure to insert all records from "emp" table to "emp1".
+
+create table emp1 (ename varchar(10))
+/
+
+
+create or replace procedure load_data
+is
+	TYPE  typ_aa IS VARRAY(200000) OF VARCHAR(10);
+	vtest typ_aa := typ_aa();
+        		
+begin
+	select ename
+	bulk collect into vtest
+	from  emp;
+
+	for i in vtest.first..vtest.last
+	loop
+		insert into emp1
+			values(vtest(i));
+	end loop;
+end;
+/
+
+
+--unit testing
+sql> exec load_data;
+
+---------------------------------------------------------------------------------------------
+
+B. Modify the above the program to load only the emp names whose salary is a even number.
+
+CREATE OR REPLACE PROCEDURE EVEN_SAL
+IS
+	TYPE TYP_AA IS VARRAY (1000) OF NUMBER;
+	VTEST TYP_AA:= TYP_AA();
+BEGIN
+
+	SELECT SAL BULK COLLECT INTO VTEST FROM EMP;
+
+	FOR I IN VTEST.FIRST..VTEST.LAST
+	LOOP
+		if mod (vtest(I), 2)= 0 then 
+			INSERT INTO EMP2 VALUES (VTEST(I));
+		end if;
+	END LOOP;
+END;
+/
+CRATE TABLE EMP2 (SAL NUMBER)
+SQL> EXEC EVEN_SAL;
+
+PL/SQL procedure successfully completed.
+
+SQL> SELECT * FROM EMP2;
+
+       SAL
+----------
+       800
+      1600
+      1250
+      1250
+      2850
+      2450
+      3000
+      5000
+      1500
+      1100
+       950
+      3000
+      1300
+
+13 rows selected.
+
+================================================================================================
+================================================================================================
+
+============
+BULK BINDING
+============
+
+- Bulk binding reduces interaction between SQL & PLSQL engines to 1 instead of many.
+- It provides better performance
+
+
+Methods / Types of implementing Bulk Binding
+============================================
+
+a) BULK COLLECT INTO  ( "SELECT" / "FETCH" from CURSOR)
+
+b) FORALL statement (only for DMLs).
+	- FORALL is used for DML statements, which helps to improve the performance 
+	  of mass data load or data updates.... (through loops).
+	- It uses bulk-binding concept
+	- LOOP & END LOOP are not required.
+	- Within FORALL, only one DML is processed
+
+
+----------------------------------------------------
+Demo Example to prove FORALL is faster than FOR Loop
+----------------------------------------------------
+
+demo -----bulk collect----------> collection -----FOR/FORALL-----------> demo1
+
+========================================
+create table demo1
+(empno number);
+========================================
+begin
+ for i in 1..200000
+ loop
+	insert into demo
+	values(i);
+ end loop;
+ commit;
+end;
+/
+=========================
+create table demo2
+(empno number);
+=====================================================
+set timing on;
+=====================================================
+
+
+declare
+  type ty_test is table of number index by pls_integer;
+  var  ty_test;
+begin
+  select empno
+  bulk collect into var
+  from demo1;
+ 
+/*
+  forall i in 1..var.last
+	insert into demo2 values(var(i));
+*/
+
+end;
+/
+--------------------------
+rollback;
+--------------------------
+ 
+
+
+================================================================================================
+================================================================================================
+
+Disvadvantages of FORALL Method
+===============================
+a) Only one DML Statement can be processed. No validations can be given as well.
+
+  forall i in 1..var.last
+	insert into demo1 values(var(i));
+
+  forall i in 1..var.last
+	insert into demo2 values(var(i));
+
+
+b) If any errors occur during the data load, the entire load is rolled back. This will take more time to 
+re-load.
+
+Solution:- We have to use SAVE EXCEPTIONS clause and handle ORA-24381 error.
+======== 
+
+SQL%BULK_EXCEPTIONS :- Implicit collection attribute to store the errors during FORALL.
+
+
+----------------------------sample code-----------------------------
+declare
+  type 		ty_test is table of number index by pls_integer;
+  var  		ty_test;
+  bulk_ex	exception;
+  pragma	exception_init(bulk_ex,-24381);
+begin
+  select empno
+  bulk collect into var 
+  from demo
+  where rownum<=20;
+
+
+  forall i in 1..var.last save exceptions
+	insert into rs_new values(var(i));
+
+exception
+  when bulk_ex then
+	FOR i in 1..SQL%BULK_EXCEPTIONS.count
+	loop
+	  --dbms_output.put_line(SQL%BULK_EXCEPTIONS(i).error_code);
+	  --dbms_output.put_line(SQL%BULK_EXCEPTIONS(i).error_index);
+  	  dbms_output.put_line(var(SQL%BULK_EXCEPTIONS(i).error_index));
+	  dbms_output.put_line(sqlerrm(-SQL%BULK_EXCEPTIONS(i).error_code));
+	end loop;        
+end;
+================================================================================================
+================================================================================================
+
+
+Difference between FOR & FORALL loops
+=====================================
+
+FOR					FORALL
+================================================================
+A) used with collections 	a) only with collections
+or without collections
+
+b) no bulk binding		b) bulk binding
+
+c) slower			c) faster
+
+d) loop & end loop are 		d) LOOP & END LOOP are not required 
+required
+
+e) REVERSE keyword can be used	e) We can't use REVERSE keyword.
+
+f) For others also we can use.	f) Only for DMLs
+
+g) we can process more than	g) only one DML statement for one FORALL
+1 DMLs within FOR
+
+Eg:-
+----
+forall i in 1..emp.count
+ insert into temp1 values(vtemp(i));
+
+forall i in 1..vtemp.count
+ insert into temp2 values(vtemp(i));
+
+FOR:-
+====
+for i in 1..vtemp.count
+loop
+ insert into temp1 values(vtemp(i));
+ insert into temp2 values(vtemp(i));
+end loop;
+
+================================================================================================
+================================================================================================
+
+============
+LIMIT clause
+============
+
+a) LIMIT (attribute/method)
+	:returns the size of the varray , it acts as collection attribute/method.
+	:can be used for VARRAY
+
+declare
+   type ty_var is varray(100) of varchar(10);
+   var  ty_var;
+begin
+   select ename bulk collect into var from emp;
+   dbms_output.put_line(var.limit); --> returns the size of the varray. [100]
+   dbms_output.put_line(var.count); --> returns the varray elements.    [14]
+end;
+ 
+
+b)
+
+LIMIT clause:
+=============
+-Helps to fetch the data batch-by-batch, so that we get better performance.
+-It avoids network traffic and provides better performance.
+-It should be used when we fetch the data from cursor to a collection.
+
+
+declare
+ Type num_ty is varray(20000) of varchar2(10);
+ vnames  num_ty;
+ cursor cur is
+	select ename from emp_big;
+begin
+
+ open cur;
+ loop
+     fetch  cur bulk collect into vnames LIMIT 2000;
+     exit when cur%notfound;
+     for i in 1..vnames.last
+     loop
+	dbms_output.put_line(vnames(i));
+     end loop;     
+ end loop;
+
+ close  cur;
+
+end;
+/
+
+================================================================================================
+================================================================================================
+
+NOCOPY:
+=======
+- It is an hint used for improving the performance of OUT parameters that return
+  large numbers of rows ..
+- NOCOPY avoids copying from Formal Parameter to Actual Parameter.
+- It uses call by reference instead of call by value.
+- It provides better performance.
+- It can be used only for OUT & INOUT parameters.
+
+
+sql> create or replace type arr_nums is varray(100) of number
+/
+
+
+
+create or replace procedure get_sal
+(
+  pdno	in 		NUMBER,
+  psal	out nocopy	arr_nums
+)
+is
+begin
+  select sal
+	bulk collect into psal
+	from demo
+	where deptno=pdno;
+end;
+/
+
+
+declare
+  var arr_nums := arr_nums();
+begin
+  get_sal(10,var);
+for i in vt.first..vt.last
+loop
+  dbms_output.put_line(var(i));
+end;
+/
+
+================================================================================================
+================================================================================================
+
+==========================
+Cursors v/s Collections :-
+==========================
+
+	Cursors				Collections
+=================================================================================
+Cursors are felxible		-Collections are not flexible
+to return multiple records.	to return multiple records & columns 
+(2-D collections).
+
+
+
+
+In cursors we can't manipulate	-In collections we can add/remove data easily
+anything after data is fetched 
+
+OPEN C1					SELECT ENAME BULK COLLECT INTO VTEMP
+FOR					FROM EMP WHERE DEPTNO=20;
+SELECT ENAME				
+FROM EMP WHERE DEPTNO=20;		VTEMP.EXTEND;
+					VTEMP(6) := 'X' ;
+					
+
+
+
+
+Cursors cannot be stored in DB	-Collections can be stored in DB (VARRAYS & NT)
+
+
+
+
+
+Bulk-binding cannot be		-Bulkbinding can be implemented.
+implemented in cursors.	
+
+
+
+
+Only Sequential access of 	-Here we can access the data randomly
+the data is possible.
+
+
+
+
+We can't fetch the data in	-Here we can fetch the data in reverse order.
+reverse order.	
+					..
+					..
+					for i in reverse 1..vtemp.last
+					loop
+					  dp(vtemp(i));
+					end loop;
+					..
+					..
+
+===================================================================================================
+===================================================================================================
+
+==========
+INDICES OF
+==========
+
+- It helps to access only the existing slots to avoid NO DATA FOUND [ element at index does not exist ] error.
+- INDICES OF helps to access only the data from the existing slots.
+- In case of "SPARSED" Associative array, we get -1403 error if the slot is missing.
+- It can be used only with FORALL.
+- "VALUES OF" can be used instead of INDICES OF clause.
+
+
+declare
+  type t1 is table of number index by pls_integer;
+  vtemp t1;
+begin
+  vtemp(1) := 100;
+  vtemp(2) := 200;
+  vtemp(3) := 100;
+  vtemp(6) := 200;
+  vtemp(7) := 100;
+  vtemp(8) := 200;
+
+  forall i in indices of vtemp
+  	insert into temp1 values(vtemp(i));
+end;
+/
+
+===================================================================================================
+===================================================================================================
+
+=====================
+Errors in Collections 
+=====================
+
+DECLARE
+ TYPE  aa_typ IS varray(5) OF number ;
+ vtemp aa_typ := aa_typ();
+ vsum number := 0;
+BEGIN
+ vtemp.extend(1);
+ vtemp(1) := 100;
+ vtemp.extend;
+ vtemp(2) := 200;
+ vtemp.extend(4);
+ vtemp(3) := 300;
+ vtemp(4) := 400;
+ vtemp(5) := 500;
+ for i in 1..vtemp.last
+ loop
+	vsum := vsum + vtemp(i);
+ end loop;
+end;
+/
+
+---------------------------------------------
+
+1)
+ORA-06533: Subscript beyond count 
+(when we donot EXTEND the collection we will get this error.
+It comes only for VARRAY & NT)
+
+
+2)
+ORA-06531: Reference to uninitialized collection
+(when we donot initialize the collection we will get this error.
+It comes only for VARRAY & NT)
+
+
+3) ORA-1403 : NO DATA FOUND
+(only for AA, when we attempt to access a non-existence slot)
+We can overcome by using "EXISTS" method..
+..
+if vtemp.exists(10) then
+  dbms_output.put_line (vtemp(10));
+end if;
+..
+
+
+4) ORA-06532: Subscript outside of limit
+(Only for VARRAYs, when we attempt to EXTEND or access a slot beyond 
+ VARRAY's size)
+
+
+
+5) ORA-24381: Errors in Array DML
+(Occurs when FORALL is having atleast one error & if we are using SAVE EXCEPTIONS also)
+ 
+
+===================================================================================================
+===================================================================================================
+
+Assignments:-
+============
+a) What is disadvantage of FORALL? How do you overcome ? 
+  -- if any error occure during the data load , then entire load is rollback , so then it will get more time to reload 
+  -- if overcome this error to use  save expection he is error is handle and store the error in spl%bulk_expection thid implicit     atribute the collection
+  -- Only one DML Statement can be processed. 
+  -- No validations can be given as well.
+
+
+
+b) Difference between NT & VARRAY?
+  
+                 @ NESTED TABLE                                                                @ varray 
+  1) they are bonded(should give size)                         1) they are unbounded (no size should be given during the creation)
+  2) max size is between 1 to 2 RASE TO 31                     2)  max size is between 1 to 2 RASE TO 31 
+  3) they can not take negative subscripts                     3)  they can not take negative subscripts
+  4) they can not take character subscripts                    4) they can not take character subscripts
+  5) they can be store in db                                   5) they can be store in db
+  6) they are reusable                                         6) they are reusable 
+  7) they are used in both sql and plsql level                 7) they are used in both sql and plsql level
+  8) initilization is required                                 8)  initilization is required   
+  9) extend method is required to create a new slot            9) extend method is required to create a new slot
+   ( becouse all the slots are not pre-defined )
+  10) here we can delete element/slot individually             10) here we can not delete element /slot individually but we can delete from last
+  11) they are initially 'dense' in nature but after           11) they are always 'dense' in nature
+  deletion it can become 'sparse'(non continuous)in nature
+  12) accessing a slot which is not existing will not throw    12) accessing a slot which is not existing will not throw (no_data_found error)
+    (NO_data_found error)     
+              
+c) Difference between NT & PL/SQL Tables?
+   
+           @ nested table                                          @PL/sql or associative arrays
+  1)                                                           1) it is an un ordered set of elements with all the indexes are pre-defined
+  1) they are bonded(should give size)                         2) they are unbounded (no size should be giving duringt the creation 
+  2) max size is between 1 to 2 RASE TO 31                     3)  max size is between 1 to 2 RASE TO 31 
+  3) they can not take negative subscripts                     4)  they can  take negative subscripts
+  4) they can not take character subscripts                    5) they can  take character subscripts
+  5) they can be store in db                                   6) they are not  store in db
+  6) they are reusable                                         7) they are not reusable 
+  7) they are used in both sql and plsql level                 8) they are used  in  plsql level
+  8) initilization is required                                 9)  initilization is not required   
+  9) extend method is required to create a new slot            10) extend method is not required to create a new slot
+   ( becouse all the slots are not pre-defined )                 (because all the slots are pre-defined
+  10) here we can delete element/slot individually             11) here we can  delete element /slot individually 
+  11) they are initially 'dense' in nature but after           12) they are always 'sparse' (non-continuous subscripts) IN NATURE
+  deletion it can become 'sparse'(non continuous)in nature
+  12) accessing a slot which is not existing will not throw    13) accessing a slot which is not existing will not throw (no_data_found error)
+    (NO_data_found error)     
+     
+
+
+d) What is a collection, advantages, types?
+- a collection is an array like structute which can store multiple values .
+_ it is user defined data type.
+Advantage=
+ @  a collection is handle multiple rows within a plsql program
+ @  IT HEPLAS TO MULTIPLE VALUES RETURES FROM A  PROCEDURE OR A FUNCTION (MULTIPLE ROWS)
+ @ HEPLS TO IMPROVE THE PERFORMANCE OF PLSQL PROGRAM USING A CONCEPT CALLED AS BULK BANDING
+ @ IN COLLECTION RADOM ACCESSS OF THE ELEMENTS IS POSSIBLE IN ADITION TO SEQUENTIAL ACCESS.
+ @ IN COLLECTION REVERSE ACCESS OF THE ELEMENTS IS POSSIBLE IN ADITION TO SEQUENTIAL V ACCESS.
+
+ TYPE TO COLLECTION:
+ 1) ASSOCIATIVE ARRAYS OR INDEX-BY-TABLE OR PLSQL TABLE
+ 2) NESTED TABLE
+ 3) VARRAYS (VARIABLE ARRAYS)
+
+ 
+
+
+e) What are PL/SQL tables?
+  -- 
+
+
+f) Difference between BULK BINDING & BULK COLLECT?
+
+
+
+g) Write a progran to reverse of array values
+h) sorting using arrays numbers
+i) Write a procedure to total all array numbers without using SUM function
+
+select sal
+bulk collect into vsal
+from emp;
+
+vsum := 0;
+for i in 1..vtemp.last
+loop
+	vsum := vsum + nvl(vtemp(i),0);
+end loop;
+
+
+j) display only even numbers from an array
+for i in 1..vtemp.last
+loop
+	if mod(vtemp(i),2) = 0 then
+		dp(vtemp(i));
+	end if;
+end loop;
+
+
+k) WRITE A FUNCTION TO RETURN  EMPNO & SALARIES for a given deptno in following format
+
+return o/p
+==========
+7788
+2000
+7839
+4000
+..
+..
+create or replace function ret_values
+(
+ pdno in number
+)
+return var_nums
+is
+	v1 var_nums := var_nums();
+	v2 var_nums := var_nums();
+	v3 var_nums := var_nums();
+	j  number   := 1;
+begin
+	select empno, sal
+	bulk collect into v1, v2
+	from emp
+	where deptno = pdno;
+
+	for i in v1.first..v1.last
+	loop
+		v3.extend;
+		v3(j) := v1(i);
+		v3.extend;
+		j:=j+1;
+		v3(j) := v2(i);
+		j:=j+1;
+	end loop;
+	return v3;
+end;
+/
+
+select ret_values(20) from dual;
+
+select * from table(ret_values(20)) ;
+
+
+(l) merging 2 arrays into a single array
+====================================
+select merge_array( var_names('scott','blake'), var_names('ford','miller') ) 
+from dual;
+
+create or replace function merge_array
+(
+  pdata1 IN var_names,
+  pdata2 IN var_names
+)
+retrun var_names
+is
+	vfinal var_names := var_names();
+begin
+	for i in 1..pdata1.last
+	loop
+		vfinal.extend;
+		vfinal(i) := pdata1(i);
+	end loop;
+	j := pdata1.last + 1;
+	for i in 1..pdata1.last
+	loop
+		vfinal.extend;
+		vfinal(j) := pdata2(i);
+		j := j+1;
+	end loop;
+	
+	return vfinal;
+
+	..
+	..
+
+
+end;
+/
+
+
+
+

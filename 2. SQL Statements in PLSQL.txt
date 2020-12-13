@@ -1,0 +1,238 @@
+
+
+====================================================
+	USING SQL STATEMENTS WITHIN PLSQL
+====================================================
+
+
+Eg:- 1 - Program to update a given record
+-----------------------------------------
+
+declare
+ vdno number := &deptno;
+begin
+ update emp
+	set sal = sal + 0.2*sal
+	where deptno = vdno;
+ dbms_output.put_line(sql%rowcount);
+end;
+/
+
+sql%rowcount  	-> It is a in-built cursor attribute which tells how many rows have updated.
+		-> Helpful for DML statements only.
+
+
+Eg:- 2 - Program to insert 100 rows
+----------------------------------- 
+
+create table test (id number, name varchar(10),)
+/
+
+-------
+
+begin
+  for i in 1..100
+  loop
+     insert into test
+	values(i, 'oracle'||i);
+  end loop;
+  COMMIT;
+end;
+/	
+
+
+Eg:- 3 - Program to print ename, sal for a given empno
+------------------------------------------------------
+
+declare
+   veno 	number := &empno;
+   vname	varchar(20);
+   vsal		number;
+begin
+   select ename, sal
+   into   vname, vsal
+   from   emp
+   where  empno = veno;
+
+   dbms_output.put_line(vname||vsal);
+end;
+/
+
+
+Note:
+=====
+- SELECT statement should have INTO clause.
+- If SELECT statement fails, then we get NO DATA FOUND (ORA-1403)  error.
+
+
+Methods of declaring Variables
+==============================
+
+a) %TYPE
+--------
+- Syntax is "tablename.colname%TYPE"
+- It gives the same datatype & size to a variable as of a column
+- If the base column is changed, then we don't have to change the variable type in the programs.
+
+
+b) %ROWTYPE
+-----------
+- It is record type variable (similar to STRUCTURE in C Language).
+- It can store all the columns of a row
+- It avoids declaring multiple variables
+- It can store only 1 row with multiple columns
+
+
+Eg:- 4 - Program to print ename, sal for a given empno
+------------------------------------------------------
+
+declare
+   veno 	number := &empno;
+   vname	emp.ename%TYPE;
+   vsal		emp.sal%TYPE;
+begin
+   select ename, sal
+   into   vname, vsal
+   from   emp
+   where  empno = veno;
+
+   dbms_output.put_line(vname||vsal);
+end;
+/
+ 
+
+Eg:- 5 - Program to print all columns for a given empno
+-------------------------------------------------------
+
+declare
+   veno 	number := &empno;
+   vt		emp%ROWTYPE;
+begin
+   select *
+   into   vt
+   from   emp
+   where  empno = veno;
+
+   dbms_output.put_line(vt.ename||vt.sal||vt.hiredate||vt.deptno);
+end;
+/
+
+
+Eg:- 6 - Program to print ename for a given empno, also print the number of records in emp table.
+-------------------------------------------------------------------------------------------------
+
+declare
+   veno 	emp.empno%type := &empno;
+   vname	emp.ename%TYPE;
+   vcnt		pls_integer;
+begin
+   select ename
+   into   vname
+   from   emp
+   where  empno = veno;
+
+   dbms_output.put_line(vname);
+
+   select count(*)
+   into   vcnt
+   from   emp;
+
+   dbms_output.put_line(vcnt);
+end;
+/
+
+
+--Program to check whether an employee exists or not for a given empno.
+
+declare
+ veno number := &empno; 
+ vcnt number;
+begin
+
+ select count(*)
+ into   vcnt
+ from   emp
+ where  empno = veno;
+
+
+ if (vcnt = 0) then
+	dbms_output.put_line('not exists');
+ else
+	dbms_output.put_line('exists');
+ end if;
+
+end;
+/
+
+
+ASSIGNMENTS
+===========
+
+(1) Write a program to print ename, sal and his status for a given empno.
+   Status is  "Low"  if salary is between 0 to 2000.
+   Status is  "Medium" if it is between 2001 to 3000
+   Else status is "High".
+ declare
+ vno number := &empno;
+ vname emp.ename%type;
+ vsal emp.sal%type;
+begin
+ select ename, sal into vname, vsal from emp where empno= vno;
+ if (vsal<2000) then
+ dbms_output.put_line('low');
+elsif (vsal<3000) then
+dbms_output.put_line('medium');
+else
+dbms_output.put_line('high');
+end if;
+end;
+/
+
+
+(2) Accept a empno and check whether emp is existing or not?
+
+If the empno is existing, then print his name 
+ display his comm,job and his new sal(20% more existing sal).
+ [else]
+   if sal > 2000
+    display his dname & his sal and his new sal(10% more of sal).
+ [end if]
+[else]
+  If the emp is not existing then
+	display message " emp not exists !!"
+[end if]
+ declare
+eno  number:=&no;
+vname emp.ename%type;
+vsal emp.sal%type;
+vcomm emp.comm%type;
+vjob emp.job%type;
+vcnt pls_integer;
+begin
+select ename, comm, sal, job into vname, vsal, vcomm, vjob from emp where empno=eno;
+if (vcnt>0) then
+ dbms_output.put_line(vname);
+  update emp set sal= sal+sal*0.2 where empno=eno;
+  if(sal>2000) then
+   select a.dname 
+ 
+ how to get increment emp with sal 
+ declare
+cursor c1
+is
+select empno, sal from emp for update;
+incr_sal number;
+begin
+for i in c1 
+loop
+if i.sal<1000 then
+incr_sal:=.3;
+end if;
+if i.sal>5000 then
+incr_sal:=0.2;
+end if;
+update emp set sal=sal+sal* incr_sal  where current of c1;
+end loop;
+end;
+ 
+	

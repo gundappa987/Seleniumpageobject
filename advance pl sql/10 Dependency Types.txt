@@ -1,0 +1,55 @@
+
+Object Dependecies
+==================
+Independant Object		Dependant Object
+				(Referenced Object)
+==================================================
+TABLE				VIEW
+SEQUENCE			SYNONYM
+				SP
+				UDF
+				PACKAGE
+				TRIGGER
+				INDEX
+===========================================
+TRACKING DEPENDENCY:
+====================
+select name, type
+from user_dependencies 
+where referenced_name='EMP'
+AND referenced_OWNER != 'SYS';
+
+
+-- Quick way identifying the dependent objects
+select distinct name
+from user_source
+where upper(text) like '%DEPT%'
+AND OWNER='SCOTT'
+/
+
+
+=========================================================
+
+Types:
+
+a) Soft Dependency( DDL changes will not affect)
+- NO CODE change IS REQUIRED, only RECOMPILATION IS REQUIRED
+
+B) HARD Dependency ( DDL changes will affect) (same column)
+- CODE CHANGE IS REQUIRED
+================================================
+--checking the status
+SELECT OBJECT_TYPE,STATUS 
+FROM USER_OBJECTS 
+where object_name='SAVE_DEPT'
+/
+===============================================
+
+
+--recompile the objects (SOFT DEPENDENCY)
+ALTER PROCEDURE GET_NMS COMPILE;
+ALTER FUNCTION GET_NMS COMPILE;
+ALTER VIEW  GET_NMS COMPILE;
+ALTER PACKAGE TEST_PACK COMPILE;      -> SPEC+BODY
+ALTER PACKAGE TEST_PACK COMPILE BODY; -> BODY ONLY
+================================================
